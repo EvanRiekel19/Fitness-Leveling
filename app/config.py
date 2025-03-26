@@ -13,7 +13,7 @@ class Config:
         # Ensure we're using the correct dialect name
         if database_url.startswith('postgres://'):
             database_url = database_url.replace('postgres://', 'postgresql+psycopg2://', 1)
-        elif not database_url.startswith('postgresql://'):
+        elif not database_url.startswith('postgresql+psycopg2://'):
             database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
         SQLALCHEMY_DATABASE_URI = database_url
     else:
