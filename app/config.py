@@ -6,7 +6,13 @@ load_dotenv(os.path.join(basedir, '.env'))
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-please-change-in-production'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+    
+    # Handle Heroku PostgreSQL URL format
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    SQLALCHEMY_DATABASE_URI = database_url or \
         'sqlite:///' + os.path.join(os.path.dirname(basedir), 'instance', 'fitness_leveling.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
