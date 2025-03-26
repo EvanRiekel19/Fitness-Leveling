@@ -9,11 +9,13 @@ class Config:
     
     # Handle Heroku PostgreSQL URL format
     database_url = os.environ.get('DATABASE_URL')
-    if database_url and database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    if database_url:
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        SQLALCHEMY_DATABASE_URI = database_url
+    else:
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(basedir), 'instance', 'fitness_leveling.db')
     
-    SQLALCHEMY_DATABASE_URI = database_url or \
-        'sqlite:///' + os.path.join(os.path.dirname(basedir), 'instance', 'fitness_leveling.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Strava API Configuration
