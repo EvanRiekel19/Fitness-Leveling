@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Customize Avatar - Fitness Leveling{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-4">
+    <h1 class="text-2xl font-bold text-white mb-6">Customize Your Avatar</h1>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Current Avatar Preview -->
+        <div class="bg-dark-surface rounded-xl p-6">
+            <h2 class="text-lg font-medium text-gray-100 mb-4">Current Avatar</h2>
+            <div class="flex justify-center">
+                <img id="currentAvatar" src="{{ current_user.get_avatar_url() }}" alt="Current Avatar" class="w-32 h-32 rounded-lg">
+            </div>
+        </div>
+
+        <!-- Customization Form -->
+        <form method="POST" class="bg-dark-surface rounded-xl p-6">
+            <h2 class="text-lg font-medium text-gray-100 mb-4">Customize</h2>
+            
+            <!-- Avatar Style Selection -->
+            <div class="mb-6">
+                <label class="block text-gray-300 mb-2">Avatar Style</label>
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-4 max-h-96 overflow-y-auto p-2">
+                    {% set styles = [
+                        'adventurer', 'adventurer-neutral', 'avataaars', 'big-ears',
+                        'big-ears-neutral', 'big-smile', 'bottts', 'croodles',
+                        'croodles-neutral', 'fun-emoji', 'icons', 'identicon',
+                        'lorelei', 'lorelei-neutral', 'micah',
+                        'miniavs', 'open-peeps', 'personas', 'pixel-art',
+                        'pixel-art-neutral', 'shapes', 'thumbs'
+                    ] %}
+                    
+                    {% for style in styles %}
+                    <div class="relative">
+                        <input type="radio" name="avatar_style" value="{{ style }}" 
+                               id="style_{{ style }}" class="hidden peer" 
+                               {% if current_user.avatar_style == style %}checked{% endif %}
+                               onchange="updateVariations('{{ style }}')">
+                        <label for="style_{{ style }}" 
+                               class="block cursor-pointer">
+                            <img src="https://api.dicebear.com/7.x/{{ style }}/svg?seed=preview&backgroundColor=b6e3f4"
+                                 alt="{{ style }}"
+                                 class="w-full aspect-square rounded-lg border-2 border-transparent peer-checked:border-blue-500 hover:border-blue-400 transition-colors">
+                            <div class="mt-1 text-center text-xs text-gray-400 truncate">{{ style|replace('-', ' ')|title }}</div>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Style Variations Grid -->
+            <div class="mb-6">
+                <label class="block text-gray-300 mb-2">Style Variations</label>
+                <div id="variationsGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-4 max-h-96 overflow-y-auto p-2">
+                    <!-- Variations will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Background Color -->
+            <div class="mb-6">
+                <label for="background" class="block text-gray-300 mb-2">Background Color</label>
+                <input type="color" name="avatar_background" id="background" 
+                       value="{{ current_user.avatar_background }}"
+                       class="w-full h-10 bg-dark-hover rounded-lg cursor-pointer">
+            </div>
+
+            <!-- Hidden seed input - will be updated by variation selection -->
+            <input type="hidden" name="avatar_seed" id="seed" value="{{ current_user.avatar_seed }}">
+
+            <!-- Action Buttons -->
+            <div class="flex justify-between">
+                <button type="submit" class="px-6 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Save Changes
+                </button>
+                <a href="{{ url_for('profile.index') }}" class="px-6 h-10 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors inline-flex items-center">
+                    Back to Profile
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const styleInputs = document.querySelectorAll('input[name="avatar_style"]');
+    const backgroundInput = document.getElementById('background');
+    const currentAvatar = document.getElementById('currentAvatar');
+    const seedInput = document.getElementById('seed');
+    
+    // Initial load of variations for the selected style
+    const selectedStyle = document.querySelector('input[name="avatar_style"]:checked');
+    if (selectedStyle) {
+        updateVariations(selectedStyle.value);
+    }
+
+    function updatePreview(style, seed) {
+        const backgroundColor = backgroundInput.value.substring(1); // Remove #
+        currentAvatar.src = `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=${backgroundColor}`;
+    }
+
+    function updateVariations(style) {
+        const variationsGrid = document.getElementById('variationsGrid');
+        variationsGrid.innerHTML = ''; // Clear existing variations
+        
+        // Generate 12 different variations using different seeds
+        const seeds = generateSeeds(style);
+        
+        seeds.forEach(seed => {
+            const div = document.createElement('div');
+            div.className = 'relative';
+            div.innerHTML = `
+                <input type="radio" name="variation" value="${seed}" 
+                       id="var_${seed}" class="hidden peer" 
+                       ${seedInput.value === seed ? 'checked' : ''}>
+                <label for="var_${seed}" class="block cursor-pointer">
+                    <img src="https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=${backgroundInput.value.substring(1)}"
+                         alt="Variation ${seed}"
+                         class="w-full aspect-square rounded-lg border-2 border-transparent peer-checked:border-blue-500 hover:border-blue-400 transition-colors">
+                </label>
+            `;
+            variationsGrid.appendChild(div);
+            
+            // Add change listener to the new radio input
+            const input = div.querySelector('input');
+            input.addEventListener('change', () => {
+                seedInput.value = seed;
+                updatePreview(style, seed);
+            });
+        });
+    }
+
+    function generateSeeds(style) {
+        // Generate style-specific seeds that create good variations
+        const baseSeeds = {
+            'adventurer': ['Felix', 'Milo', 'Luna', 'Bella', 'Charlie', 'Lucy', 'Max', 'Oliver', 'Leo', 'Lily', 'Rocky', 'Daisy'],
+            'bottts': ['Robot1', 'Bot2', 'Droid3', 'Mech4', 'Unit5', 'Tech6', 'Cyber7', 'AI8', 'Machine9', 'Android10', 'System11', 'Core12'],
+            // Add more style-specific seeds as needed
+        };
+        
+        return (baseSeeds[style] || Array.from({length: 12}, (_, i) => `Variation${i+1}`));
+    }
+    
+    backgroundInput.addEventListener('input', () => {
+        const selectedStyle = document.querySelector('input[name="avatar_style"]:checked').value;
+        updatePreview(selectedStyle, seedInput.value);
+    });
+    
+    styleInputs.forEach(input => input.addEventListener('change', () => {
+        updateVariations(input.value);
+    }));
+});
+</script>
+{% endblock %} 

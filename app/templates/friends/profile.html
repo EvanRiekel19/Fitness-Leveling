@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }}'s Profile - Fitness Leveling{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Profile Header -->
+    <div class="bg-dark-surface rounded-xl shadow-sm p-6 mb-6">
+        <div class="flex items-center space-x-6">
+            <img src="{{ user.get_avatar_url() }}" alt="Profile Avatar" class="w-24 h-24 rounded-lg">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-100">{{ user.username }}</h1>
+                <div class="flex items-center space-x-2">
+                    <p class="text-gray-400">Level {{ user.level }}</p>
+                    <span class="text-gray-400">•</span>
+                    <p class="text-gray-400">{{ user.get_rank() }} Rank</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Total Workouts -->
+        <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-medium text-gray-100 mb-2">Total Workouts</h3>
+            <p class="text-3xl font-bold text-blue-400">{{ total_workouts }}</p>
+        </div>
+
+        <!-- Total Distance -->
+        <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-medium text-gray-100 mb-2">Total Distance</h3>
+            <p class="text-3xl font-bold text-blue-400">
+                {{ "%.1f"|format(total_distance) }} km
+                <span class="text-lg text-gray-400">({{ "%.1f"|format(total_distance * 0.621371) }} mi)</span>
+            </p>
+        </div>
+
+        <!-- Total Duration -->
+        <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-medium text-gray-100 mb-2">Total Duration</h3>
+            <p class="text-3xl font-bold text-blue-400">
+                {{ total_duration }} min
+                <span class="text-lg text-gray-400">({{ "%.1f"|format(total_duration / 60) }} hrs)</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Workout Types -->
+    {% if workout_types %}
+    <div class="bg-dark-surface rounded-xl shadow-sm p-6 mb-6">
+        <h2 class="text-lg font-medium text-gray-100 mb-4">Workout Distribution</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% for type, count in workout_types.items() %}
+            <div class="bg-dark-hover rounded-lg p-4">
+                <h4 class="text-gray-300 font-medium">{{ type|title }}</h4>
+                <p class="text-2xl font-bold text-blue-400">{{ count }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Workouts -->
+    <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-medium text-gray-100 mb-4">Recent Workouts</h2>
+        {% if recent_workouts %}
+            <div class="space-y-4">
+                {% for workout in recent_workouts %}
+                    <div class="bg-dark-hover rounded-lg p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-gray-100 font-medium">{{ workout.name }}</h3>
+                                <p class="text-sm text-gray-400">
+                                    {{ workout.type|title }} • {{ workout.duration }} minutes
+                                    {% if workout.type == 'cardio' and workout.distance %}
+                                        • {{ "%.2f"|format(workout.distance) }} km ({{ "%.2f"|format(workout.get_distance_miles()) }} mi)
+                                        {% if workout.get_pace_per_km() %}
+                                            • {{ workout.get_pace_per_km() }} ({{ workout.get_pace_per_mile() }})
+                                        {% endif %}
+                                    {% endif %}
+                                </p>
+                                <p class="text-sm text-gray-400">{{ workout.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            </div>
+                            <span class="text-blue-400">+{{ workout.xp_earned }} XP</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-dark-hover rounded-lg p-4 text-center">
+                <p class="text-gray-400">No workouts yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

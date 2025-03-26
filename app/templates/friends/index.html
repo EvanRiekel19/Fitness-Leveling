@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Friends - Fitness Leveling{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+        <!-- Add Friend Section -->
+        <div class="mb-8">
+            <h2 class="text-lg font-medium text-gray-100 mb-4">Add Friend</h2>
+            <form action="{{ url_for('friends.add_friend') }}" method="POST" class="space-y-4">
+                <div class="relative">
+                    <input type="text" name="username" id="username-search" 
+                           class="w-full bg-dark-hover text-gray-100 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Search by username..."
+                           autocomplete="off">
+                    <div id="search-results" class="absolute w-full mt-2 bg-dark-hover rounded-lg shadow-lg hidden">
+                        <!-- Search results will be populated here -->
+                    </div>
+                </div>
+                <button type="submit" class="inline-flex items-center px-4 h-10 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                    Send Friend Request
+                </button>
+            </form>
+        </div>
+
+        <!-- Pending Friend Requests -->
+        {% if pending_requests %}
+        <div class="mb-8">
+            <h2 class="text-lg font-medium text-gray-100 mb-4">Friend Requests</h2>
+            <div class="space-y-4">
+                {% for request in pending_requests %}
+                <div class="bg-dark-hover rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <img src="{{ request.sender.get_avatar_url() }}" alt="Avatar" class="w-12 h-12 rounded-lg">
+                            <div>
+                                <p class="text-gray-100">{{ request.sender.username }}</p>
+                                <p class="text-sm text-gray-400">Level {{ request.sender.level }} • {{ request.sender.get_rank() }}</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-4">
+                            <form action="{{ url_for('friends.accept_friend', friendship_id=request.id) }}" method="POST" class="inline">
+                                <button type="submit" class="inline-flex items-center px-4 h-8 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors">
+                                    Accept
+                                </button>
+                            </form>
+                            <form action="{{ url_for('friends.reject_friend', friendship_id=request.id) }}" method="POST" class="inline">
+                                <button type="submit" class="inline-flex items-center px-4 h-8 border border-red-600 text-sm font-medium rounded-lg text-red-400 hover:bg-red-900 hover:text-white transition-colors">
+                                    Reject
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Friends List -->
+        <div>
+            <h2 class="text-lg font-medium text-gray-100 mb-4">Friends</h2>
+            {% if friends %}
+                <div class="space-y-4">
+                    {% for friend in friends %}
+                    <div class="bg-dark-hover rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <a href="{{ url_for('friends.view_profile', username=friend.username) }}" class="flex items-center space-x-4 hover:opacity-75 transition-opacity">
+                                    <img src="{{ friend.get_avatar_url() }}" alt="Avatar" class="w-12 h-12 rounded-lg">
+                                    <div>
+                                        <p class="text-gray-100">{{ friend.username }}</p>
+                                        <p class="text-sm text-gray-400">Level {{ friend.level }} • {{ friend.get_rank() }}</p>
+                                    </div>
+                                </a>
+                            </div>
+                            <form action="{{ url_for('friends.remove_friend', friend_id=friend.id) }}" method="POST" class="inline"
+                                  onsubmit="return confirm('Are you sure you want to remove this friend?');">
+                                <button type="submit" class="inline-flex items-center px-4 h-8 border border-red-600 text-sm font-medium rounded-lg text-red-400 hover:bg-red-900 hover:text-white transition-colors">
+                                    Remove
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-dark-hover rounded-lg p-4 text-center">
+                    <p class="text-gray-400">No friends yet. Start adding friends to compare your progress!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for live search -->
+<script>
+const searchInput = document.getElementById('username-search');
+const searchResults = document.getElementById('search-results');
+let searchTimeout;
+
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    
+    if (query.length < 3) {
+        searchResults.classList.add('hidden');
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        fetch(`{{ url_for('friends.search') }}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(users => {
+                if (users.length > 0) {
+                    searchResults.innerHTML = users.map(user => `
+                        <div class="p-2 hover:bg-dark-surface cursor-pointer" onclick="selectUser('${user.username}')">
+                            <div class="flex items-center space-x-3">
+                                <img src="${user.avatar_url}" alt="Avatar" class="w-8 h-8 rounded-lg">
+                                <div>
+                                    <p class="text-gray-100">${user.username}</p>
+                                    <p class="text-xs text-gray-400">Level ${user.level} • ${user.rank}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    searchResults.classList.remove('hidden');
+                } else {
+                    searchResults.innerHTML = '<div class="p-2 text-gray-400">No users found</div>';
+                    searchResults.classList.remove('hidden');
+                }
+            });
+    }, 300);
+});
+
+document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.classList.add('hidden');
+    }
+});
+
+function selectUser(username) {
+    searchInput.value = username;
+    searchResults.classList.add('hidden');
+}
+</script>
+{% endblock %} 
