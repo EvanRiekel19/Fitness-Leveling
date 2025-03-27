@@ -15,10 +15,6 @@ def create_app(config_class=Config):
     
     # Configuration
     app.config.from_object(config_class)
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-key-please-change-in-production'
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'fitness_leveling.db')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Initialize extensions
     db.init_app(app)
