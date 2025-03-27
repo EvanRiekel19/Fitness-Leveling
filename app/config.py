@@ -4,21 +4,15 @@ from dotenv import load_dotenv
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
 
+# Fix the old Heroku-style URL before it's used
+db_url = os.environ.get("DATABASE_URL")
+
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-please-change-in-production'
-    
-    # Handle Heroku PostgreSQL URL format
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url:
-        # Ensure we're using the correct dialect name
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql+psycopg2://', 1)
-        elif not database_url.startswith('postgresql+psycopg2://'):
-            database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
-        SQLALCHEMY_DATABASE_URI = database_url
-    else:
-        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(basedir), 'instance', 'fitness_leveling.db')
-    
+    SQLALCHEMY_DATABASE_URI = db_url or 'sqlite:///' + os.path.join(os.path.dirname(basedir), 'instance', 'fitness_leveling.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Strava API Configuration
