@@ -5,7 +5,7 @@ from app import db
 from datetime import datetime
 import urllib.parse
 
-bp = Blueprint('strava', __name__)
+bp = Blueprint('strava', __name__, url_prefix='/strava')
 
 @bp.route('/connect')
 @login_required
