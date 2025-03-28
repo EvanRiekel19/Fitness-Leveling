@@ -18,3 +18,4 @@ class Config:
     # Strava API Configuration
     STRAVA_CLIENT_ID = os.environ.get('STRAVA_CLIENT_ID')
     STRAVA_CLIENT_SECRET = os.environ.get('STRAVA_CLIENT_SECRET') 
+    BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
