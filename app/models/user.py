@@ -266,8 +266,14 @@ class User(UserMixin, db.Model):
     
     def update_last_workout(self):
         """Update the last workout timestamp."""
-        self.last_workout_at = datetime.utcnow()
-        db.session.commit()
+        try:
+            self.last_workout_at = datetime.utcnow()
+            db.session.commit()
+        except Exception as e:
+            # If the column doesn't exist, silently fail
+            db.session.rollback()
+            print(f"Warning: Could not update last_workout_at: {e}")
+            pass
 
 @login_manager.user_loader
 def load_user(id):
