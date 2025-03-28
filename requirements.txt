@@ -10,5 +10,4 @@ requests==2.31.0
 Werkzeug==2.3.7
 SQLAlchemy==1.4.50
 psycopg2==2.9.9
-postgresql-client
 stravalib==1.5
