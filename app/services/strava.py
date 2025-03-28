@@ -12,6 +12,7 @@ class StravaService:
 
     def get_authorization_url(self, redirect_uri):
         """Generate the authorization URL for Strava OAuth."""
+        print(f"Generating auth URL with redirect URI: {redirect_uri}")
         return self.client.authorization_url(
             client_id=self.client_id,
             redirect_uri=redirect_uri,

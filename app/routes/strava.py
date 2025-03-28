@@ -17,10 +17,8 @@ def connect():
             client_secret=current_app.config['STRAVA_CLIENT_SECRET']
         )
         
-        # Ensure callback URL matches exactly what's registered in Strava
-        redirect_uri = url_for('strava.callback', _external=True)
-        if 'http://localhost:5000' not in redirect_uri:
-            redirect_uri = 'http://localhost:5000/callback'
+        # Use the BASE_URL from config for the redirect URI
+        redirect_uri = f"{current_app.config['BASE_URL']}/strava/callback"
         print(f"Redirect URI: {redirect_uri}")
         
         auth_url = strava_service.get_authorization_url(redirect_uri)
