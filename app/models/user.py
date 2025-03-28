@@ -12,10 +12,7 @@ class User(UserMixin, db.Model):
     xp = db.Column(db.Integer, default=0)
     level = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    try:
-        last_workout_at = db.Column(db.DateTime, nullable=True)
-    except:
-        pass  # If column doesn't exist, don't fail
+    last_workout_at = db.Column(db.DateTime, nullable=True)
     xp_decay_rate = db.Column(db.Float, default=0.05)  # 5% decay per day after grace period
     xp_decay_grace_days = db.Column(db.Integer, default=3)  # Days before decay starts
     

@@ -26,7 +26,11 @@ class Workout(db.Model):
         if self.user_id:
             user = User.query.get(self.user_id)
             if user:
-                user.update_last_workout()
+                try:
+                    user.update_last_workout()
+                except:
+                    # For backward compatibility with old databases
+                    pass
     
     def calculate_xp(self):
         """Calculate XP based on workout type and parameters."""
