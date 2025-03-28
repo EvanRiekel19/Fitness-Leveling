@@ -21,20 +21,22 @@ engine = create_engine(database_url)
 
 # Check if column exists
 with engine.connect() as conn:
-    result = conn.execute(text("""
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name='user' AND column_name='last_workout_at'
-    """))
-    
-    exists = result.fetchone() is not None
-    
-    if not exists:
-        print("Adding last_workout_at column to user table...")
-        conn.execute(text("ALTER TABLE \"user\" ADD COLUMN last_workout_at TIMESTAMP"))
-        conn.commit()
-        print("Column added successfully")
-    else:
-        print("last_workout_at column already exists")
+    # Begin transaction
+    with conn.begin():
+        result = conn.execute(text("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='user' AND column_name='last_workout_at'
+        """))
+        
+        exists = result.fetchone() is not None
+        
+        if not exists:
+            print("Adding last_workout_at column to user table...")
+            conn.execute(text("ALTER TABLE \"user\" ADD COLUMN last_workout_at TIMESTAMP"))
+            # No need for conn.commit() - transaction will handle it
+            print("Column added successfully")
+        else:
+            print("last_workout_at column already exists")
 
 print("Done!") 
