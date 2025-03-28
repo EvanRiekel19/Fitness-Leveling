@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Detailed Strength Workout - Fitness Leveling{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-100">Log Strength Workout</h1>
+            <a href="{{ url_for('workout.new') }}" class="text-sm text-blue-400 hover:text-blue-300 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Back to Simple Form
+            </a>
+        </div>
+        
+        <form id="strength-workout-form" method="POST" class="space-y-6">
+            <!-- Basic Workout Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-300">Workout Name</label>
+                    <input type="text" id="name" name="name" required
+                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
+                        placeholder="e.g., Upper Body Day, Leg Day">
+                </div>
+                <div>
+                    <label for="duration" class="block text-sm font-medium text-gray-300">Duration (minutes)</label>
+                    <input type="number" id="duration" name="duration" required min="1"
+                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
+                </div>
+            </div>
+            
+            <div>
+                <label for="intensity" class="block text-sm font-medium text-gray-300">Overall Intensity (1-10)</label>
+                <input type="range" id="intensity" name="intensity" min="1" max="10" value="5"
+                    class="mt-1 block w-full bg-dark-hover accent-blue-500"
+                    oninput="document.getElementById('intensity-value').textContent = this.value">
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>Easy (1)</span>
+                    <span id="intensity-value">5</span>
+                    <span>Max Effort (10)</span>
+                </div>
+            </div>
+
+            <!-- Exercises Section -->
+            <div class="border-t border-gray-700 pt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-medium text-gray-100">Exercises</h2>
+                    <button type="button" id="add-exercise-btn"
+                        class="inline-flex items-center px-3 h-8 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add Exercise
+                    </button>
+                </div>
+                
+                <div id="exercises-container" class="space-y-6">
+                    <!-- Exercise cards will be added here dynamically -->
+                    <div class="text-center py-10 text-gray-400 italic text-sm" id="no-exercises-message">
+                        No exercises added yet. Click "Add Exercise" to start building your workout.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label for="notes" class="block text-sm font-medium text-gray-300">Workout Notes</label>
+                <textarea id="notes" name="notes" rows="3"
+                    class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
+                    placeholder="How did it feel? Any achievements or personal records?"></textarea>
+            </div>
+
+            <!-- Hidden field to store exercise data as JSON -->
+            <input type="hidden" id="exercises-data" name="exercises_data" value="[]">
+
+            <!-- Submit Button -->
+            <div class="flex justify-end space-x-4">
+                <a href="{{ url_for('workout.index') }}"
+                    class="inline-flex items-center justify-center px-4 h-10 border border-gray-700 text-sm font-medium rounded-lg text-gray-300 bg-dark-hover hover:bg-dark-surface transition-colors">
+                    Cancel
+                </a>
+                <button type="submit" id="submit-btn"
+                    class="inline-flex items-center justify-center px-4 h-10 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                    disabled>
+                    Log Workout
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Exercise Template (hidden) -->
+<template id="exercise-template">
+    <div class="exercise-card bg-dark-hover rounded-lg p-4 relative" data-exercise-id="%EXERCISE_ID%">
+        <button type="button" class="remove-exercise-btn absolute top-3 right-3 text-gray-400 hover:text-red-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+        
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-300 mb-1">Exercise Name</label>
+            <div class="flex">
+                <input type="text" class="exercise-name block w-full bg-dark-surface border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100" 
+                    placeholder="e.g., Bench Press" list="exercise-options" required>
+                <button type="button" class="add-set-btn ml-2 px-3 py-1 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 rounded-md text-xs whitespace-nowrap">
+                    <svg class="w-4 h-4 inline -mt-0.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Set
+                </button>
+            </div>
+        </div>
+        
+        <div class="sets-container">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-gray-300">
+                    <thead>
+                        <tr>
+                            <th class="px-2 py-2 text-left">Set</th>
+                            <th class="px-2 py-2 text-left">Weight (kg)</th>
+                            <th class="px-2 py-2 text-left">Reps</th>
+                            <th class="px-2 py-2 text-left">Notes</th>
+                            <th class="px-2 py-2 w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="sets-table-body divide-y divide-gray-800">
+                        <!-- Sets will be added here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="no-sets-message text-center py-3 text-gray-400 italic text-xs">
+                No sets added yet. Click "Add Set" to add your first set.
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Set Row Template (hidden) -->
+<template id="set-row-template">
+    <tr class="set-row hover:bg-dark-surface" data-set-number="%SET_NUMBER%">
+        <td class="px-2 py-2">
+            <span class="set-number">%SET_NUMBER%</span>
+        </td>
+        <td class="px-2 py-2">
+            <input type="number" class="set-weight w-20 bg-dark-surface border-gray-700 rounded focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-100" 
+                step="0.5" min="0" placeholder="Weight">
+        </td>
+        <td class="px-2 py-2">
+            <input type="number" class="set-reps w-16 bg-dark-surface border-gray-700 rounded focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-100" 
+                min="0" placeholder="Reps">
+        </td>
+        <td class="px-2 py-2">
+            <input type="text" class="set-notes w-full bg-dark-surface border-gray-700 rounded focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-100" 
+                placeholder="e.g., PR, Drop set, Failed">
+        </td>
+        <td class="px-2 py-2">
+            <button type="button" class="remove-set-btn text-gray-400 hover:text-red-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<datalist id="exercise-options">
+    {% for exercise in exercise_options %}
+    <option value="{{ exercise }}">
+    {% endfor %}
+</datalist>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global variables
+    let exerciseCounter = 0;
+    const exercisesData = [];
+    
+    // DOM Elements
+    const exercisesContainer = document.getElementById('exercises-container');
+    const noExercisesMessage = document.getElementById('no-exercises-message');
+    const addExerciseBtn = document.getElementById('add-exercise-btn');
+    const exerciseTemplate = document.getElementById('exercise-template');
+    const setRowTemplate = document.getElementById('set-row-template');
+    const exercisesDataInput = document.getElementById('exercises-data');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+        addExerciseBtn.addEventListener('click', addExercise);
+        document.getElementById('strength-workout-form').addEventListener('submit', prepareFormSubmission);
+        updateSubmitButtonState();
+    });
+    
+    // Add a new exercise card
+    function addExercise() {
+        exerciseCounter++;
+        const exerciseId = exerciseCounter;
+        
+        // Clone template and replace placeholders
+        const exerciseHTML = exerciseTemplate.innerHTML.replace(/%EXERCISE_ID%/g, exerciseId);
+        
+        // Create container and add HTML
+        const exerciseElement = document.createElement('div');
+        exerciseElement.innerHTML = exerciseHTML;
+        exerciseElement.dataset.exerciseId = exerciseId;
+        exerciseElement.className = 'exercise-card-container';
+        
+        // Add exercise to DOM
+        exercisesContainer.appendChild(exerciseElement);
+        noExercisesMessage.style.display = 'none';
+        
+        // Add event listeners
+        const exerciseCard = exerciseElement.querySelector('.exercise-card');
+        const removeExerciseBtn = exerciseCard.querySelector('.remove-exercise-btn');
+        const addSetBtn = exerciseCard.querySelector('.add-set-btn');
+        const exerciseNameInput = exerciseCard.querySelector('.exercise-name');
+        
+        removeExerciseBtn.addEventListener('click', () => removeExercise(exerciseId));
+        addSetBtn.addEventListener('click', () => addSet(exerciseId));
+        exerciseNameInput.addEventListener('change', updateExercisesData);
+        
+        // Add first set automatically
+        addSet(exerciseId);
+        
+        // Add to data structure
+        exercisesData.push({
+            id: exerciseId,
+            name: '',
+            sets: []
+        });
+        
+        updateExercisesData();
+        updateSubmitButtonState();
+    }
+    
+    // Remove an exercise card
+    function removeExercise(exerciseId) {
+        const exerciseElement = document.querySelector(`.exercise-card-container[data-exercise-id="${exerciseId}"]`);
+        if (exerciseElement) {
+            exerciseElement.remove();
+            
+            // Remove from data structure
+            const index = exercisesData.findIndex(ex => ex.id === exerciseId);
+            if (index !== -1) {
+                exercisesData.splice(index, 1);
+                updateExercisesData();
+            }
+            
+            // Show message if no exercises remain
+            if (exercisesContainer.querySelectorAll('.exercise-card-container').length === 0) {
+                noExercisesMessage.style.display = 'block';
+            }
+            
+            updateSubmitButtonState();
+        }
+    }
+    
+    // Add a set to an exercise
+    function addSet(exerciseId) {
+        const exerciseCard = document.querySelector(`.exercise-card[data-exercise-id="${exerciseId}"]`);
+        const setsTableBody = exerciseCard.querySelector('.sets-table-body');
+        const noSetsMessage = exerciseCard.querySelector('.no-sets-message');
+        
+        // Count existing sets to determine the new set number
+        const existingSets = setsTableBody.querySelectorAll('.set-row');
+        const setNumber = existingSets.length + 1;
+        
+        // Clone template and replace placeholders
+        const setRowHTML = setRowTemplate.innerHTML.replace(/%SET_NUMBER%/g, setNumber);
+        
+        // Create row and add HTML
+        const setRow = document.createElement('tr');
+        setRow.innerHTML = setRowHTML;
+        setRow.classList.add('set-row');
+        setRow.dataset.setNumber = setNumber;
+        
+        // Add set to DOM
+        setsTableBody.appendChild(setRow);
+        noSetsMessage.style.display = 'none';
+        
+        // Add event listeners
+        const removeSetBtn = setRow.querySelector('.remove-set-btn');
+        const weightInput = setRow.querySelector('.set-weight');
+        const repsInput = setRow.querySelector('.set-reps');
+        const notesInput = setRow.querySelector('.set-notes');
+        
+        removeSetBtn.addEventListener('click', () => removeSet(exerciseId, setNumber));
+        weightInput.addEventListener('change', updateExercisesData);
+        repsInput.addEventListener('change', updateExercisesData);
+        notesInput.addEventListener('change', updateExercisesData);
+        
+        // Add to data structure
+        const exerciseIndex = exercisesData.findIndex(ex => ex.id === exerciseId);
+        if (exerciseIndex !== -1) {
+            exercisesData[exerciseIndex].sets.push({
+                setNumber: setNumber,
+                weight: '',
+                reps: '',
+                notes: ''
+            });
+        }
+        
+        updateExercisesData();
+    }
+    
+    // Remove a set from an exercise
+    function removeSet(exerciseId, setNumber) {
+        const exerciseCard = document.querySelector(`.exercise-card[data-exercise-id="${exerciseId}"]`);
+        const setRow = exerciseCard.querySelector(`.set-row[data-set-number="${setNumber}"]`);
+        
+        if (setRow) {
+            setRow.remove();
+            
+            // Remove from data structure
+            const exerciseIndex = exercisesData.findIndex(ex => ex.id === exerciseId);
+            if (exerciseIndex !== -1) {
+                const setIndex = exercisesData[exerciseIndex].sets.findIndex(set => set.setNumber === parseInt(setNumber));
+                if (setIndex !== -1) {
+                    exercisesData[exerciseIndex].sets.splice(setIndex, 1);
+                }
+            }
+            
+            // Renumber remaining sets
+            const remainingSets = exerciseCard.querySelectorAll('.set-row');
+            remainingSets.forEach((row, index) => {
+                const newSetNumber = index + 1;
+                row.dataset.setNumber = newSetNumber;
+                row.querySelector('.set-number').textContent = newSetNumber;
+                
+                // Update set number in data structure
+                if (exerciseIndex !== -1 && index < exercisesData[exerciseIndex].sets.length) {
+                    exercisesData[exerciseIndex].sets[index].setNumber = newSetNumber;
+                }
+            });
+            
+            // Show message if no sets remain
+            if (remainingSets.length === 0) {
+                exerciseCard.querySelector('.no-sets-message').style.display = 'block';
+            }
+            
+            updateExercisesData();
+        }
+    }
+    
+    // Update the data structure with current values
+    function updateExercisesData() {
+        const exerciseCards = document.querySelectorAll('.exercise-card');
+        
+        exerciseCards.forEach(card => {
+            const exerciseId = parseInt(card.dataset.exerciseId);
+            const exerciseName = card.querySelector('.exercise-name').value;
+            const exerciseIndex = exercisesData.findIndex(ex => ex.id === exerciseId);
+            
+            if (exerciseIndex !== -1) {
+                exercisesData[exerciseIndex].name = exerciseName;
+                
+                // Update set data
+                const setRows = card.querySelectorAll('.set-row');
+                setRows.forEach(row => {
+                    const setNumber = parseInt(row.dataset.setNumber);
+                    const weight = row.querySelector('.set-weight').value;
+                    const reps = row.querySelector('.set-reps').value;
+                    const notes = row.querySelector('.set-notes').value;
+                    
+                    const setIndex = exercisesData[exerciseIndex].sets.findIndex(set => set.setNumber === setNumber);
+                    if (setIndex !== -1) {
+                        exercisesData[exerciseIndex].sets[setIndex] = {
+                            setNumber,
+                            weight,
+                            reps,
+                            notes
+                        };
+                    }
+                });
+            }
+        });
+        
+        // Update hidden input with JSON data
+        // We need to clean up the data to remove the ID fields which are only used client-side
+        const cleanData = exercisesData.map(exercise => ({
+            name: exercise.name,
+            sets: exercise.sets.map(set => ({
+                reps: set.reps,
+                weight: set.weight,
+                notes: set.notes
+            }))
+        }));
+        
+        exercisesDataInput.value = JSON.stringify(cleanData);
+        updateSubmitButtonState();
+    }
+    
+    // Enable/disable submit button based on form validity
+    function updateSubmitButtonState() {
+        const workoutName = document.getElementById('name').value;
+        const duration = document.getElementById('duration').value;
+        const hasExercises = exercisesData.length > 0;
+        const hasValidExercises = exercisesData.every(ex => ex.name.trim() !== '');
+        
+        if (workoutName && duration && hasExercises && hasValidExercises) {
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.disabled = true;
+        }
+    }
+    
+    // Prepare form data before submission
+    function prepareFormSubmission(e) {
+        updateExercisesData();
+        
+        // Final validation check
+        const workoutName = document.getElementById('name').value;
+        const duration = document.getElementById('duration').value;
+        const hasExercises = exercisesData.length > 0;
+        const hasValidExercises = exercisesData.every(ex => ex.name.trim() !== '');
+        
+        if (!workoutName || !duration || !hasExercises || !hasValidExercises) {
+            e.preventDefault();
+            alert('Please fill out all required fields and add at least one exercise.');
+        }
+    }
+</script>
+{% endblock %} 

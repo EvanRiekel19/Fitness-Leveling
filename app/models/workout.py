@@ -16,6 +16,17 @@ class Workout(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     strava_id = db.Column(db.String(50), unique=True)  # Added to prevent duplicates
     
+    # Add relationship to exercises
+    exercises = db.relationship('Exercise', backref='workout', lazy='dynamic', cascade="all, delete-orphan")
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from app.models.user import User
+        if self.user_id:
+            user = User.query.get(self.user_id)
+            if user:
+                user.update_last_workout()
+    
     def calculate_xp(self):
         """Calculate XP based on workout type and parameters."""
         # Base XP is now lower
@@ -33,8 +44,25 @@ class Workout(db.Model):
                 # 25 XP per km instead of 50
                 base_xp += self.distance * 25
         elif self.type == 'strength':
-            if self.sets and self.reps:
-                # 0.25 XP per rep instead of 0.5
+            # Calculate XP based on exercises if present
+            exercise_xp = 0
+            
+            if self.exercises.count() > 0:
+                # Count the total number of sets across all exercises
+                total_sets = 0
+                total_reps = 0
+                
+                for exercise in self.exercises:
+                    for exercise_set in exercise.sets:
+                        total_sets += 1
+                        if exercise_set.reps:
+                            total_reps += exercise_set.reps
+                
+                # Award XP based on total volume
+                exercise_xp = total_sets * 10 + total_reps * 0.25
+                base_xp += exercise_xp
+            elif self.sets and self.reps:
+                # Fallback to old calculation if no exercises are recorded
                 base_xp += (self.sets * self.reps) * 0.25
         elif self.type == 'flexibility':
             # 1 XP per minute instead of 2
