@@ -31,15 +31,30 @@
                 </div>
             </div>
             
-            <div>
-                <label for="intensity" class="block text-sm font-medium text-gray-300">Overall Intensity (1-10)</label>
-                <input type="range" id="intensity" name="intensity" min="1" max="10" value="5"
-                    class="mt-1 block w-full bg-dark-hover accent-blue-500"
-                    oninput="document.getElementById('intensity-value').textContent = this.value">
-                <div class="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>Easy (1)</span>
-                    <span id="intensity-value">5</span>
-                    <span>Max Effort (10)</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="subtype" class="block text-sm font-medium text-gray-300">Workout Type</label>
+                    <select id="subtype" name="subtype" 
+                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
+                        <option value="strength_upper">Upper Body</option>
+                        <option value="strength_lower">Lower Body</option>
+                        <option value="strength_push">Push Workout</option>
+                        <option value="strength_pull">Pull Workout</option>
+                        <option value="strength_full" selected>Full Body</option>
+                        <option value="strength_other">Other Strength</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="intensity" class="block text-sm font-medium text-gray-300">Overall Intensity (1-10)</label>
+                    <input type="range" id="intensity" name="intensity" min="1" max="10" value="5"
+                        class="mt-1 block w-full bg-dark-hover accent-blue-500"
+                        oninput="document.getElementById('intensity-value').textContent = this.value">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>Easy (1)</span>
+                        <span id="intensity-value">5</span>
+                        <span>Max Effort (10)</span>
+                    </div>
                 </div>
             </div>
 

@@ -5,6 +5,7 @@ class Workout(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     type = db.Column(db.String(50), nullable=False)  # e.g., 'cardio', 'strength', 'flexibility'
+    subtype = db.Column(db.String(50))  # e.g., 'cardio_running', 'strength_upper'
     name = db.Column(db.String(100), nullable=False)
     duration = db.Column(db.Integer)  # Duration in minutes
     intensity = db.Column(db.Integer)  # 1-10 scale
@@ -100,4 +101,38 @@ class Workout(db.Model):
                 minutes = int(pace)
                 seconds = int((pace - minutes) * 60)
                 return f"{minutes}:{seconds:02d} /mi"
-        return None 
+        return None
+
+    def get_readable_type(self):
+        """Return a human-readable workout type name."""
+        # Map workout types to readable names for display
+        workout_type_names = {
+            # Cardio subtypes
+            'cardio_running': 'Running',
+            'cardio_walking': 'Walking',
+            'cardio_cycling': 'Cycling',
+            'cardio_swimming': 'Swimming',
+            'cardio_hiit': 'HIIT',
+            'cardio_other': 'Cardio',
+            
+            # Strength subtypes
+            'strength_upper': 'Upper Body',
+            'strength_lower': 'Lower Body',
+            'strength_push': 'Push Workout',
+            'strength_pull': 'Pull Workout',
+            'strength_full': 'Full Body',
+            'strength_other': 'Strength Training',
+            
+            # Flexibility subtypes
+            'flexibility_yoga': 'Yoga',
+            'flexibility_stretching': 'Stretching',
+            'flexibility_other': 'Flexibility',
+            
+            # Legacy types (for backward compatibility)
+            'cardio': 'Cardio',
+            'strength': 'Strength Training',
+            'flexibility': 'Flexibility'
+        }
+        
+        # Get the readable type name
+        return workout_type_names.get(self.subtype or self.type, self.type.capitalize()) 

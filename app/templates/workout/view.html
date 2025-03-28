@@ -3,9 +3,9 @@
 {% block title %}{{ workout.name }} - Fitness Leveling{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
+<div class="max-w-2xl mx-auto">
     <div class="bg-dark-surface rounded-xl shadow-sm p-6">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex justify-between items-start mb-6">
             <h1 class="text-2xl font-bold text-gray-100">{{ workout.name }}</h1>
             <a href="{{ url_for('workout.index') }}" class="text-sm text-blue-400 hover:text-blue-300 flex items-center">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -15,115 +15,128 @@
             </a>
         </div>
         
-        <!-- Basic Workout Information -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-dark-hover rounded-lg p-4">
-                <h3 class="text-xs font-medium text-gray-400 uppercase">Type</h3>
-                <p class="text-base text-gray-100">{{ workout.type|title }}</p>
-            </div>
-            <div class="bg-dark-hover rounded-lg p-4">
-                <h3 class="text-xs font-medium text-gray-400 uppercase">Duration</h3>
-                <p class="text-base text-gray-100">{{ workout.duration }} min</p>
-            </div>
-            <div class="bg-dark-hover rounded-lg p-4">
-                <h3 class="text-xs font-medium text-gray-400 uppercase">Intensity</h3>
-                <p class="text-base text-gray-100">{{ workout.intensity }}/10</p>
-            </div>
-            <div class="bg-dark-hover rounded-lg p-4">
-                <h3 class="text-xs font-medium text-gray-400 uppercase">XP Earned</h3>
-                <p class="text-base text-blue-400 font-medium">+{{ workout.xp_earned }} XP</p>
-            </div>
-        </div>
-        
-        <!-- Additional Information Based on Type -->
-        {% if workout.type == 'cardio' and workout.distance %}
-        <div class="bg-dark-hover rounded-lg p-4 mb-6">
-            <h3 class="text-xs font-medium text-gray-400 uppercase mb-2">Cardio Stats</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <p class="text-sm text-gray-400">Distance</p>
-                    <p class="text-base text-gray-100">{{ "%.2f"|format(workout.distance) }} km ({{ "%.2f"|format(workout.get_distance_miles()) }} mi)</p>
+        <!-- Workout Details -->
+        <div class="space-y-4">
+            <!-- Workout Metadata -->
+            <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div class="bg-dark-hover p-3 rounded-lg text-center">
+                    <span class="block text-xs text-gray-400">Type</span>
+                    <span class="block text-gray-200 font-medium">{{ workout.get_readable_type() }}</span>
                 </div>
-                {% if workout.get_pace_per_km() %}
-                <div>
-                    <p class="text-sm text-gray-400">Pace</p>
-                    <p class="text-base text-gray-100">{{ workout.get_pace_per_km() }}</p>
+                
+                <div class="bg-dark-hover p-3 rounded-lg text-center">
+                    <span class="block text-xs text-gray-400">Duration</span>
+                    <span class="block text-gray-200 font-medium">{{ workout.duration }} min</span>
                 </div>
-                {% endif %}
-                <div>
-                    <p class="text-sm text-gray-400">Date</p>
-                    <p class="text-base text-gray-100">{{ workout.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                
+                <div class="bg-dark-hover p-3 rounded-lg text-center">
+                    <span class="block text-xs text-gray-400">Intensity</span>
+                    <span class="block text-gray-200 font-medium">{{ workout.intensity }}/10</span>
+                </div>
+                
+                <div class="bg-dark-hover p-3 rounded-lg text-center">
+                    <span class="block text-xs text-gray-400">XP Earned</span>
+                    <span class="block text-gray-200 font-medium">{{ workout.xp_earned }}</span>
                 </div>
             </div>
-        </div>
-        {% endif %}
-        
-        <!-- Exercises Section (if strength workout and has exercises) -->
-        {% if workout.type == 'strength' and workout.exercises.count() > 0 %}
-        <div class="border-t border-gray-700 pt-6 mb-6">
-            <h2 class="text-lg font-medium text-gray-100 mb-4">Exercises</h2>
             
-            <div class="space-y-6">
-                {% for exercise in workout.exercises %}
-                <div class="bg-dark-hover rounded-lg p-4">
-                    <h3 class="text-base font-medium text-gray-100 mb-3">{{ exercise.name }}</h3>
-                    
-                    {% if exercise.sets.count() > 0 %}
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-gray-300">
-                            <thead>
-                                <tr class="border-b border-gray-700">
-                                    <th class="px-2 py-2 text-left">Set</th>
-                                    <th class="px-2 py-2 text-left">Weight (kg)</th>
-                                    <th class="px-2 py-2 text-left">Reps</th>
-                                    <th class="px-2 py-2 text-left">Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-800">
-                                {% for set in exercise.sets.order_by(exercise.sets.c.set_number) %}
-                                <tr>
-                                    <td class="px-2 py-2">{{ set.set_number }}</td>
-                                    <td class="px-2 py-2">{{ set.weight }}</td>
-                                    <td class="px-2 py-2">{{ set.reps }}</td>
-                                    <td class="px-2 py-2">{{ set.notes }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            <!-- Cardio Stats (only show if relevant) -->
+            {% if workout.type == 'cardio' and workout.distance %}
+            <div class="mt-6 bg-dark-hover p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Cardio Stats</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div class="text-center">
+                        <span class="block text-xs text-gray-400">Distance</span>
+                        <span class="block text-gray-200">{{ workout.distance|round(2) }} km</span>
+                        <span class="block text-xs text-gray-400">{{ workout.get_distance_miles()|round(2) }} mi</span>
                     </div>
-                    {% else %}
-                    <p class="text-sm text-gray-400 italic">No sets recorded</p>
+                    
+                    {% if workout.get_pace_per_km() %}
+                    <div class="text-center">
+                        <span class="block text-xs text-gray-400">Pace (Metric)</span>
+                        <span class="block text-gray-200">{{ workout.get_pace_per_km() }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if workout.get_pace_per_mile() %}
+                    <div class="text-center">
+                        <span class="block text-xs text-gray-400">Pace (Imperial)</span>
+                        <span class="block text-gray-200">{{ workout.get_pace_per_mile() }}</span>
+                    </div>
                     {% endif %}
                 </div>
-                {% endfor %}
             </div>
-        </div>
-        {% elif workout.type == 'strength' and workout.sets and workout.reps %}
-        <!-- Legacy strength workout format (before exercise tracking) -->
-        <div class="bg-dark-hover rounded-lg p-4 mb-6">
-            <h3 class="text-xs font-medium text-gray-400 uppercase mb-2">Strength Training</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <p class="text-sm text-gray-400">Sets</p>
-                    <p class="text-base text-gray-100">{{ workout.sets }}</p>
+            {% endif %}
+            
+            <!-- Exercises List (for strength workouts) -->
+            {% if workout.type == 'strength' and workout.exercises.count() > 0 %}
+            <div class="mt-6 bg-dark-hover p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Exercises</h3>
+                <div class="space-y-4">
+                    {% for exercise in workout.exercises %}
+                    <div class="border-t border-gray-700 pt-3 first:border-t-0 first:pt-0">
+                        <h4 class="font-medium text-gray-200 mb-2">{{ exercise.name }}</h4>
+                        
+                        {% if exercise.sets.count() > 0 %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-300">
+                                <thead class="text-xs text-gray-400">
+                                    <tr>
+                                        <th class="p-2">Set</th>
+                                        <th class="p-2">Weight (kg)</th>
+                                        <th class="p-2">Reps</th>
+                                        <th class="p-2">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for set in exercise.sets %}
+                                    <tr class="border-t border-gray-800">
+                                        <td class="p-2">{{ set.set_number }}</td>
+                                        <td class="p-2">{{ set.weight|default('--') }}</td>
+                                        <td class="p-2">{{ set.reps|default('--') }}</td>
+                                        <td class="p-2 text-gray-400 text-xs">{{ set.notes|default('') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
-                <div>
-                    <p class="text-sm text-gray-400">Reps per Set</p>
-                    <p class="text-base text-gray-100">{{ workout.reps }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Legacy format for strength workouts without exercise tracking -->
+            {% if workout.type == 'strength' and workout.exercises.count() == 0 and workout.sets %}
+            <div class="mt-6 bg-dark-hover p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Workout Details</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="text-center">
+                        <span class="block text-xs text-gray-400">Sets</span>
+                        <span class="block text-gray-200">{{ workout.sets }}</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="block text-xs text-gray-400">Reps per Set</span>
+                        <span class="block text-gray-200">{{ workout.reps }}</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        {% endif %}
-        
-        <!-- Notes Section -->
-        {% if workout.notes %}
-        <div class="border-t border-gray-700 pt-6">
-            <h2 class="text-lg font-medium text-gray-100 mb-2">Notes</h2>
-            <div class="bg-dark-hover rounded-lg p-4">
-                <p class="text-gray-300">{{ workout.notes|nl2br }}</p>
+            {% endif %}
+            
+            <!-- Notes -->
+            {% if workout.notes %}
+            <div class="mt-6 bg-dark-hover p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-300 mb-2">Notes</h3>
+                <p class="text-gray-300 text-sm whitespace-pre-line">{{ workout.notes }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Date Info -->
+            <div class="mt-4 text-right text-xs text-gray-400">
+                Logged on {{ workout.created_at.strftime('%B %d, %Y at %I:%M %p') }}
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %} 

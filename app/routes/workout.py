@@ -31,9 +31,14 @@ def new():
             except (ValueError, TypeError):
                 return default
 
+        # Get workout type and determine the main category
+        workout_type = request.form.get('type', 'cardio_other')
+        main_type = workout_type.split('_')[0] if '_' in workout_type else workout_type
+
         workout = Workout(
             user_id=current_user.id,
-            type=request.form.get('type', 'cardio'),
+            type=main_type,  # Store the main type (cardio, strength, flexibility)
+            subtype=workout_type,  # Store the specific subtype
             name=request.form.get('name', ''),
             duration=safe_int(request.form.get('duration')),
             intensity=safe_int(request.form.get('intensity'), 5),
@@ -85,6 +90,7 @@ def new_strength():
         workout = Workout(
             user_id=current_user.id,
             type='strength',
+            subtype=request.form.get('subtype', 'strength_full'),  # Get the specific strength subtype
             name=request.form.get('name', ''),
             duration=safe_int(request.form.get('duration')),
             intensity=safe_int(request.form.get('intensity'), 5),
@@ -94,11 +100,11 @@ def new_strength():
         # Validate required fields
         if not workout.name:
             flash('Workout name is required', 'error')
-            return render_template('workout/new_strength.html')
+            return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
         
         if workout.duration <= 0:
             flash('Duration must be greater than 0', 'error')
-            return render_template('workout/new_strength.html')
+            return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
         
         # Process exercises data from form
         exercises_data = request.form.get('exercises_data', '[]')
@@ -145,8 +151,11 @@ def new_strength():
         flash(f'Strength workout logged! Earned {xp_earned} XP', 'success')
         return redirect(url_for('workout.index'))
     
-    # Define a list of common exercise names
-    exercise_options = [
+    return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
+
+# Helper function to get exercise options
+def get_exercise_options():
+    return [
         # Chest
         "Bench Press", "Incline Bench Press", "Decline Bench Press", "Dumbbell Press", 
         "Incline Dumbbell Press", "Chest Fly", "Cable Fly", "Push-up", "Dips",
@@ -171,8 +180,6 @@ def new_strength():
         "Crunch", "Sit-up", "Plank", "Russian Twist", "Leg Raise", "Ab Rollout",
         "Hanging Leg Raise", "Cable Crunch", "Side Plank"
     ]
-    
-    return render_template('workout/new_strength.html', exercise_options=exercise_options)
 
 # Get workout details for a specific workout
 @bp.route('/workouts/<int:workout_id>')
@@ -185,4 +192,4 @@ def view(workout_id):
         flash('You do not have permission to view this workout', 'error')
         return redirect(url_for('workout.index'))
     
-    return render_template('workout/view.html', workout=workout) 
+    return render_template('workout/view.html', workout=workout)

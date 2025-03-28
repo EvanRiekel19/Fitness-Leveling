@@ -28,9 +28,32 @@
                 <label for="type" class="block text-sm font-medium text-gray-300">Workout Type</label>
                 <select id="type" name="type" required
                     class="mt-1 block w-full pl-3 pr-10 py-2 text-gray-100 bg-dark-hover border-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg">
-                    <option value="cardio">Cardio</option>
-                    <option value="strength">Strength Training</option>
-                    <option value="flexibility">Flexibility</option>
+                    <!-- Cardio options -->
+                    <optgroup label="Cardio">
+                        <option value="cardio_running">Running</option>
+                        <option value="cardio_walking">Walking</option>
+                        <option value="cardio_cycling">Cycling</option>
+                        <option value="cardio_swimming">Swimming</option>
+                        <option value="cardio_hiit">HIIT</option>
+                        <option value="cardio_other">Other Cardio</option>
+                    </optgroup>
+                    
+                    <!-- Strength options -->
+                    <optgroup label="Strength Training">
+                        <option value="strength_upper">Upper Body</option>
+                        <option value="strength_lower">Lower Body</option>
+                        <option value="strength_push">Push</option>
+                        <option value="strength_pull">Pull</option>
+                        <option value="strength_full">Full Body</option>
+                        <option value="strength_other">Other Strength</option>
+                    </optgroup>
+                    
+                    <!-- Flexibility options -->
+                    <optgroup label="Flexibility">
+                        <option value="flexibility_yoga">Yoga</option>
+                        <option value="flexibility_stretching">Stretching</option>
+                        <option value="flexibility_other">Other Flexibility</option>
+                    </optgroup>
                 </select>
             </div>
 
@@ -105,9 +128,12 @@
         strengthFields.classList.add('hidden');
         cardioFields.classList.add('hidden');
         
-        if (this.value === 'strength') {
+        // Check if selected type starts with "strength_"
+        if (this.value.startsWith('strength_')) {
             strengthFields.classList.remove('hidden');
-        } else if (this.value === 'cardio') {
+        } 
+        // Check if selected type starts with "cardio_"
+        else if (this.value.startsWith('cardio_')) {
             cardioFields.classList.remove('hidden');
         }
     });
