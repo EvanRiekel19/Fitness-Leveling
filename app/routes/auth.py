@@ -45,6 +45,15 @@ def login():
         
         if user and user.check_password(password):
             login_user(user)
+            
+            # Check and apply XP decay
+            xp_to_lose, days_until_decay = user.calculate_xp_decay()
+            if xp_to_lose > 0:
+                xp_lost = user.apply_xp_decay()
+                if xp_lost > 0:
+                    flash(f'Welcome back! You lost {xp_lost} XP due to inactivity. Work out to stop losing XP!', 'error')
+                    db.session.commit()
+            
             next_page = request.args.get('next')
             return redirect(next_page or url_for('main.index'))
         

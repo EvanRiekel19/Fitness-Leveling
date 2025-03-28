@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, flash
 from flask_login import login_required, current_user
 from app.models.workout import Workout
 from datetime import datetime, timedelta
+from app import db
 
 bp = Blueprint('main', __name__)
 
@@ -9,6 +10,14 @@ bp = Blueprint('main', __name__)
 def index():
     if not current_user.is_authenticated:
         return render_template('main/landing.html')
+    
+    # Check and apply XP decay
+    xp_to_lose, days_until_decay = current_user.calculate_xp_decay()
+    if xp_to_lose > 0:
+        xp_lost = current_user.apply_xp_decay()
+        if xp_lost > 0:
+            flash(f'You lost {xp_lost} XP due to inactivity! Work out to stop losing XP.', 'error')
+            db.session.commit()
     
     # Get recent workouts
     recent_workouts = Workout.query.filter_by(user_id=current_user.id)\

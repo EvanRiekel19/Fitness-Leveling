@@ -12,6 +12,9 @@ class User(UserMixin, db.Model):
     xp = db.Column(db.Integer, default=0)
     level = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_workout_at = db.Column(db.DateTime)  # Track last workout date
+    xp_decay_rate = db.Column(db.Float, default=0.05)  # 5% decay per day after grace period
+    xp_decay_grace_days = db.Column(db.Integer, default=3)  # Days before decay starts
     
     # Avatar customization fields
     avatar_style = db.Column(db.String(20), default='adventurer')  # adventurer, identicon, bottts, etc.
@@ -236,6 +239,35 @@ class User(UserMixin, db.Model):
     def get_pending_friend_requests(self):
         """Get pending friend requests received by the user."""
         return self.received_friend_requests.filter_by(status='pending').all()
+    
+    def calculate_xp_decay(self):
+        """Calculate how much XP will be lost due to inactivity."""
+        if not self.last_workout_at:
+            return 0, None
+            
+        days_since_workout = (datetime.utcnow() - self.last_workout_at).days
+        if days_since_workout <= self.xp_decay_grace_days:
+            return 0, self.xp_decay_grace_days - days_since_workout
+            
+        days_in_decay = days_since_workout - self.xp_decay_grace_days
+        decay_multiplier = 1 - pow(1 - self.xp_decay_rate, days_in_decay)
+        xp_to_lose = int(self.xp * decay_multiplier)
+        
+        return xp_to_lose, self.xp_decay_grace_days - days_since_workout
+    
+    def apply_xp_decay(self):
+        """Apply XP decay if necessary."""
+        xp_to_lose, _ = self.calculate_xp_decay()
+        if xp_to_lose > 0:
+            self.xp = max(0, self.xp - xp_to_lose)
+            self.update_level()
+            return xp_to_lose
+        return 0
+    
+    def update_last_workout(self):
+        """Update the last workout timestamp."""
+        self.last_workout_at = datetime.utcnow()
+        db.session.commit()
 
 @login_manager.user_loader
 def load_user(id):

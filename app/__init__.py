@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from flask_apscheduler import APScheduler
 from app.config import Config
 import os
 
@@ -9,6 +10,7 @@ import os
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
+scheduler = APScheduler()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -33,5 +35,20 @@ def create_app(config_class=Config):
     app.register_blueprint(profile.bp)
     app.register_blueprint(strava.bp)
     app.register_blueprint(friends.bp)
+    
+    # Set up scheduler
+    if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        scheduler.init_app(app)
+        scheduler.start()
+        
+        # Import and schedule tasks
+        from app.tasks import apply_xp_decay_to_all_users
+        scheduler.add_job(
+            id='apply_xp_decay',
+            func=apply_xp_decay_to_all_users,
+            trigger='interval',
+            hours=24,  # Run once per day
+            next_run_time=None  # Start on next interval
+        )
     
     return app
