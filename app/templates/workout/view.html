@@ -14,16 +14,16 @@
                 Back to Workouts
             </a>
         </div>
-
-        <!-- Debug info to see what data is available -->
-        <div class="bg-red-900/20 border border-red-900/30 rounded-lg p-4 mb-6">
-            <p class="text-red-300 text-sm font-mono">Debug: {{ exercises|length }} exercises found</p>
-            {% for exercise_data in exercises %}
-                <p class="text-red-300 text-sm font-mono mt-2">
-                    - {{ exercise_data.model.name }}: {{ exercise_data.ordered_sets|length }} sets
-                </p>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="mb-4 p-4 bg-{{ category if category != 'warning' else 'yellow-900/20' }} border border-{{ category if category != 'warning' else 'yellow-900/30' }} rounded-lg">
+                <p class="text-{{ category if category != 'warning' else 'yellow-200' }} text-sm">{{ message }}</p>
+              </div>
             {% endfor %}
-        </div>
+          {% endif %}
+        {% endwith %}
         
         <!-- Workout Details -->
         <div class="space-y-4">
@@ -189,9 +189,11 @@
                 </div>
             </div>
             {% else %}
-                {% if workout.type == 'strength' and workout.sets %}
+                {% if workout.type == 'strength' %}
                 <div class="mt-6 bg-dark-hover p-4 rounded-lg">
                     <h3 class="text-sm font-medium text-gray-300 mb-3">Workout Details</h3>
+                    
+                    {% if workout.sets %}
                     <div class="grid grid-cols-2 gap-3">
                         <div class="text-center">
                             <span class="block text-xs text-gray-400">Sets</span>
@@ -202,6 +204,12 @@
                             <span class="block text-gray-200">{{ workout.reps }}</span>
                         </div>
                     </div>
+                    {% else %}
+                    <div class="py-3 text-center">
+                        <p class="text-gray-400 text-sm">No detailed exercise information available for this workout.</p>
+                        <p class="text-gray-400 text-sm mt-1">Next time, use the "Detailed Strength Training Form" for complete exercise tracking.</p>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
             {% endif %}

@@ -258,34 +258,55 @@ def get_exercise_options():
 def view(workout_id):
     from app.models.exercise import ExerciseSet, Exercise
     from flask import current_app
+    import json
     
     # Get workout with a direct query that includes exercises
     workout = Workout.query.get_or_404(workout_id)
-    
-    # Debug: Log what we're finding to help diagnose issues
-    current_app.logger.info(f"Viewing workout: {workout.id} - {workout.name} - Type: {workout.type}")
-    current_app.logger.info(f"Workout has {workout.exercises.count()} exercises")
     
     # Ensure the user owns this workout
     if workout.user_id != current_user.id:
         flash('You do not have permission to view this workout', 'error')
         return redirect(url_for('workout.index'))
     
-    # Query directly to ensure exercises are retrieved correctly
-    exercises_query = Exercise.query.filter_by(workout_id=workout.id).all()
-    current_app.logger.info(f"Direct query found {len(exercises_query)} exercises")
+    # Debug information to identify any issues
+    current_app.logger.info(f"Viewing workout: {workout.id} - {workout.name} - Type: {workout.type}")
+    
+    try:
+        # Use raw SQL to ensure we get all exercises
+        exercise_rows = db.session.execute(f"SELECT * FROM exercise WHERE workout_id = {workout_id}").fetchall()
+        current_app.logger.info(f"SQL Query found {len(exercise_rows)} exercises")
+        
+        if not exercise_rows and workout.type == 'strength':
+            current_app.logger.warning(f"No exercises found for strength workout {workout_id}")
+            # For debugging, log some information about missing exercises
+            flash(f"This workout doesn't have detailed exercise data. Try using the 'Detailed Strength Training Form' for your next workout.", "warning")
+    except Exception as e:
+        current_app.logger.error(f"Error querying exercises: {e}")
+        exercise_rows = []
     
     # Process exercises and their sets for ordered display
     exercises = []
     
+    # Get all exercises for this workout
+    exercises_query = Exercise.query.filter_by(workout_id=workout.id).all()
+    
     for exercise in exercises_query:
+        current_app.logger.info(f"Processing exercise: {exercise.id} - {exercise.name}")
+        
         # Get sets for this exercise, ordered by set number
-        sets = ExerciseSet.query.filter_by(exercise_id=exercise.id).order_by(ExerciseSet.set_number).all()
-        current_app.logger.info(f"Found {len(sets)} sets for exercise {exercise.name}")
+        try:
+            sets = ExerciseSet.query.filter_by(exercise_id=exercise.id).order_by(ExerciseSet.set_number).all()
+            current_app.logger.info(f"Found {len(sets)} sets for exercise {exercise.name}")
+        except Exception as e:
+            current_app.logger.error(f"Error querying sets for exercise {exercise.id}: {e}")
+            sets = []
         
         exercises.append({
             'model': exercise,
             'ordered_sets': sets
         })
+    
+    if not exercises and workout.type == 'strength':
+        current_app.logger.warning(f"No exercises found in ORM for strength workout {workout_id}")
     
     return render_template('workout/view.html', workout=workout, exercises=exercises)
