@@ -45,6 +45,10 @@ def index():
 @bp.route('/debug')
 def debug():
     """Debug endpoint to check database schema."""
+    from app import db
+    from sqlalchemy import inspect
+    from flask import jsonify, current_app
+    
     try:
         inspector = inspect(db.engine)
         tables = inspector.get_table_names()
@@ -94,6 +98,42 @@ def debug():
                     
         except Exception as e:
             result['db_connection'] = f'error: {str(e)}'
+            
+        # Test user operations
+        try:
+            from app.models.user import User
+            test_user = User.query.first()
+            if test_user:
+                result['user_test'] = {
+                    'id': test_user.id,
+                    'username': test_user.username,
+                    'has_last_workout_attr': hasattr(test_user, 'last_workout_at'),
+                    'last_workout': str(test_user.last_workout_at) if hasattr(test_user, 'last_workout_at') and test_user.last_workout_at else None
+                }
+        except Exception as e:
+            result['user_test_error'] = str(e)
+            
+        # Test workout operations
+        try:
+            from app.models.workout import Workout
+            test_workout = Workout.query.first()
+            if test_workout:
+                result['workout_test'] = {
+                    'id': test_workout.id,
+                    'name': test_workout.name,
+                    'type': test_workout.type,
+                    'has_subtype_attr': hasattr(test_workout, 'subtype'),
+                    'subtype': test_workout.subtype if hasattr(test_workout, 'subtype') else None
+                }
+                
+                # Test workout calculations
+                try:
+                    xp = test_workout.calculate_xp()
+                    result['workout_xp_test'] = xp
+                except Exception as e:
+                    result['workout_xp_error'] = str(e)
+        except Exception as e:
+            result['workout_test_error'] = str(e)
             
         return jsonify(result)
     except Exception as e:

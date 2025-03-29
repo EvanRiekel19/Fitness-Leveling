@@ -51,6 +51,23 @@ def create_app(config_class=Config):
             print(f"Database initialization error (non-fatal): {e}")
             db.session.rollback()
     
+    # Register error handlers
+    @app.errorhandler(500)
+    def handle_500(e):
+        import traceback
+        error_traceback = traceback.format_exc()
+        print(f"500 Error: {error_traceback}")
+        
+        # Only return detailed error information in debug mode
+        if app.debug:
+            return f"""
+            <h1>Internal Server Error (500)</h1>
+            <h2>The server encountered an error and could not complete your request.</h2>
+            <pre>{error_traceback}</pre>
+            """, 500
+        else:
+            return "Internal Server Error", 500
+    
     # Register blueprints
     from app.routes import auth, main, workout, profile, strava, friends
     app.register_blueprint(auth.bp)
