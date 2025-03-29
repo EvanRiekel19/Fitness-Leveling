@@ -7,19 +7,14 @@
     <div class="bg-dark-surface rounded-xl shadow-sm p-6">
         <h1 class="text-2xl font-bold text-gray-100 mb-6">Log New Workout</h1>
         
-        <!-- Link to detailed strength training form -->
-        <div class="mb-6 p-4 bg-blue-600/10 rounded-lg border border-blue-600/20">
-            <p class="text-sm text-gray-300 mb-2">
-                <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        <!-- Button for detailed strength training form -->
+        <div class="mb-6 text-center">
+            <a href="{{ url_for('workout.new_strength') }}" 
+               class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-                For detailed strength training with multiple exercises, sets, and weights:
-            </p>
-            <a href="{{ url_for('workout.new_strength') }}" class="inline-flex items-center text-sm text-blue-400 hover:text-blue-300">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-                Use the Detailed Strength Training Form
+                Use Detailed Strength Training Form
             </a>
         </div>
         

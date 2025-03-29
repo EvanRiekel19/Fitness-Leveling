@@ -143,34 +143,36 @@
             {% if workout.type == 'strength' and workout.exercises.count() > 0 %}
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
                 <h3 class="text-sm font-medium text-gray-300 mb-3">Exercises</h3>
-                <div class="space-y-4">
+                <div class="space-y-6">
                     {% for exercise in workout.exercises %}
-                    <div class="border-t border-gray-700 pt-3 first:border-t-0 first:pt-0">
-                        <h4 class="font-medium text-gray-200 mb-2">{{ exercise.name }}</h4>
+                    <div class="border-t border-gray-700 pt-4 first:border-t-0 first:pt-0">
+                        <h4 class="font-medium text-gray-200 text-base mb-3">{{ exercise.name }}</h4>
                         
                         {% if exercise.sets.count() > 0 %}
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left text-gray-300">
-                                <thead class="text-xs text-gray-400">
+                                <thead class="text-xs text-gray-400 bg-dark-surface rounded-t-lg">
                                     <tr>
-                                        <th class="p-2">Set</th>
-                                        <th class="p-2">Weight (kg)</th>
-                                        <th class="p-2">Reps</th>
-                                        <th class="p-2">Notes</th>
+                                        <th class="px-3 py-2 rounded-tl-lg">Set</th>
+                                        <th class="px-3 py-2">Weight (kg)</th>
+                                        <th class="px-3 py-2">Reps</th>
+                                        <th class="px-3 py-2 rounded-tr-lg">Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for set in exercise.sets %}
-                                    <tr class="border-t border-gray-800">
-                                        <td class="p-2">{{ set.set_number }}</td>
-                                        <td class="p-2">{{ set.weight|default('--') }}</td>
-                                        <td class="p-2">{{ set.reps|default('--') }}</td>
-                                        <td class="p-2 text-gray-400 text-xs">{{ set.notes|default('') }}</td>
+                                    <tr class="border-t border-gray-800 {% if loop.last %}rounded-b-lg{% endif %}">
+                                        <td class="px-3 py-2 font-medium {% if loop.last %}rounded-bl-lg{% endif %}">{{ set.set_number }}</td>
+                                        <td class="px-3 py-2">{% if set.weight %}{{ set.weight|round(1) }}{% else %}--{% endif %}</td>
+                                        <td class="px-3 py-2">{% if set.reps %}{{ set.reps }}{% else %}--{% endif %}</td>
+                                        <td class="px-3 py-2 text-gray-400 {% if loop.last %}rounded-br-lg{% endif %}">{{ set.notes|default('') }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
+                        {% else %}
+                        <p class="text-sm text-gray-400 italic">No sets recorded for this exercise</p>
                         {% endif %}
                     </div>
                     {% endfor %}
