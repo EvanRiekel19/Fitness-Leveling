@@ -36,7 +36,78 @@
                 
                 <div class="bg-dark-hover p-3 rounded-lg text-center">
                     <span class="block text-xs text-gray-400">XP Earned</span>
-                    <span class="block text-gray-200 font-medium">{{ workout.xp_earned }}</span>
+                    <span class="block text-gray-200 font-medium">+{{ workout.xp_earned }}</span>
+                </div>
+            </div>
+            
+            <!-- XP Calculation -->
+            <div class="bg-dark-hover p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-300 mb-3">XP Breakdown</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Base XP:</span>
+                        <span class="text-gray-200">75 XP</span>
+                    </div>
+                    
+                    {% if workout.type == 'strength' and workout.duration > 45 %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Long workout bonus:</span>
+                        <span class="text-gray-200">+{{ (workout.duration - 45) * 2 }} XP</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if workout.type == 'cardio' and workout.distance %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Distance ({{ workout.distance|round(2) }} km):</span>
+                        <span class="text-gray-200">+{{ (workout.distance * 30)|int }} XP</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if workout.type == 'strength' and workout.exercises.count() > 0 %}
+                    {% set total_sets = namespace(value=0) %}
+                    {% set total_reps = namespace(value=0) %}
+                    
+                    {% for exercise in workout.exercises %}
+                        {% for set in exercise.sets %}
+                            {% set total_sets.value = total_sets.value + 1 %}
+                            {% if set.reps %}
+                                {% set total_reps.value = total_reps.value + set.reps %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Sets ({{ total_sets.value }}):</span>
+                        <span class="text-gray-200">+{{ (total_sets.value * 12)|int }} XP</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Reps ({{ total_reps.value }}):</span>
+                        <span class="text-gray-200">+{{ (total_reps.value * 0.35)|int }} XP</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if workout.type == 'flexibility' %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Duration bonus:</span>
+                        <span class="text-gray-200">+{{ (workout.duration * 1.5)|int }} XP</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Duration multiplier:</span>
+                        <span class="text-gray-200">×{{ min(3, max(1, workout.duration / 30))|round(2) }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Intensity multiplier:</span>
+                        <span class="text-gray-200">×{{ (1 + (workout.intensity / 10))|round(2) }}</span>
+                    </div>
+                    
+                    <div class="border-t border-gray-700 pt-2 mt-2 flex justify-between font-semibold">
+                        <span class="text-gray-300">Total XP:</span>
+                        <span class="text-blue-400">{{ workout.xp_earned }} XP</span>
+                    </div>
                 </div>
             </div>
             

@@ -34,23 +34,27 @@ class Workout(db.Model):
     
     def calculate_xp(self):
         """Calculate XP based on workout type and parameters."""
-        # Base XP is now lower
-        base_xp = 50
+        # Base XP is higher for longer workouts
+        base_xp = 75
         
-        # Duration multiplier (1-2x) - reduced from 1-3x
-        duration_multiplier = min(2, max(1, self.duration / 45))
+        # Duration multiplier (1-3x for longer workouts)
+        duration_multiplier = min(3, max(1, self.duration / 30))
         
-        # Intensity multiplier (1-1.5x) - reduced from 1-2x
-        intensity_multiplier = 1 + (self.intensity / 20)
+        # Intensity multiplier (1-2x)
+        intensity_multiplier = 1 + (self.intensity / 10)
         
-        # Type-specific bonuses - reduced values
+        # Type-specific bonuses
         if self.type == 'cardio':
             if self.distance:
-                # 25 XP per km instead of 50
-                base_xp += self.distance * 25
+                # 30 XP per km
+                base_xp += self.distance * 30
         elif self.type == 'strength':
             # Calculate XP based on exercises if present
             exercise_xp = 0
+            
+            # Extra base XP for strength workouts over 45 minutes
+            if self.duration > 45:
+                base_xp += (self.duration - 45) * 2  # 2 XP per minute over 45
             
             if self.exercises.count() > 0:
                 # Count the total number of sets across all exercises
@@ -64,14 +68,14 @@ class Workout(db.Model):
                             total_reps += exercise_set.reps
                 
                 # Award XP based on total volume
-                exercise_xp = total_sets * 10 + total_reps * 0.25
+                exercise_xp = total_sets * 12 + total_reps * 0.35
                 base_xp += exercise_xp
             elif self.sets and self.reps:
                 # Fallback to old calculation if no exercises are recorded
-                base_xp += (self.sets * self.reps) * 0.25
+                base_xp += (self.sets * self.reps) * 0.5
         elif self.type == 'flexibility':
-            # 1 XP per minute instead of 2
-            base_xp += self.duration
+            # 1.5 XP per minute
+            base_xp += self.duration * 1.5
             
         # Calculate final XP
         self.xp_earned = int(base_xp * duration_multiplier * intensity_multiplier)
