@@ -73,12 +73,12 @@
                     </div>
                     {% endif %}
                     
-                    {% if workout.type == 'strength' and workout.exercises.count() > 0 %}
+                    {% if workout.type == 'strength' %}
                     {% set total_sets = namespace(value=0) %}
                     {% set total_reps = namespace(value=0) %}
                     
-                    {% for exercise in workout.exercises %}
-                        {% for set in exercise.sets %}
+                    {% for exercise_data in exercises %}
+                        {% for set in exercise_data.ordered_sets %}
                             {% set total_sets.value = total_sets.value + 1 %}
                             {% if set.reps %}
                                 {% set total_reps.value = total_reps.value + set.reps %}
@@ -149,7 +149,7 @@
             </div>
             {% endif %}
             
-            <!-- Exercises List (for strength workouts) -->
+            <!-- Exercises List -->
             {% if exercises|length > 0 %}
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
                 <h3 class="text-sm font-medium text-gray-300 mb-3">Exercises</h3>
@@ -188,23 +188,22 @@
                     {% endfor %}
                 </div>
             </div>
-            {% endif %}
-            
-            <!-- Legacy format for strength workouts without exercise tracking -->
-            {% if workout.type == 'strength' and workout.exercises.count() == 0 and workout.sets %}
-            <div class="mt-6 bg-dark-hover p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-gray-300 mb-3">Workout Details</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="text-center">
-                        <span class="block text-xs text-gray-400">Sets</span>
-                        <span class="block text-gray-200">{{ workout.sets }}</span>
-                    </div>
-                    <div class="text-center">
-                        <span class="block text-xs text-gray-400">Reps per Set</span>
-                        <span class="block text-gray-200">{{ workout.reps }}</span>
+            {% else %}
+                {% if workout.type == 'strength' and workout.sets %}
+                <div class="mt-6 bg-dark-hover p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-300 mb-3">Workout Details</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center">
+                            <span class="block text-xs text-gray-400">Sets</span>
+                            <span class="block text-gray-200">{{ workout.sets }}</span>
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs text-gray-400">Reps per Set</span>
+                            <span class="block text-gray-200">{{ workout.reps }}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+                {% endif %}
             {% endif %}
             
             <!-- Notes -->

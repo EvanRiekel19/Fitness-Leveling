@@ -10,63 +10,71 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
 
-def create_app(config_class=Config):
-    app = Flask(__name__)
+def create_app(test_config=None):
+    # Create and configure the app
+    app = Flask(__name__, instance_relative_config=True)
     
-    # Configuration
-    app.config.from_object(config_class)
+    # Default config settings
+    app.config.from_mapping(
+        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev_key_123'),
+        SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_URL', 'sqlite:///fitness_leveling.db').replace('postgres://', 'postgresql://'),
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    )
+    
+    # Update with test config if provided
+    if test_config:
+        app.config.from_mapping(test_config)
+    
+    # Ensure instance folder exists
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
     
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
     
-    # Set up login
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message_category = 'info'
+    # Import models for migrations
+    from app.models.user import User
+    from app.models.workout import Workout
+    from app.models.exercise import Exercise, ExerciseSet
     
-    # Ensure database tables exist
+    # Set up user loader
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    
+    # Create tables
     with app.app_context():
+        # Create tables if they don't exist
         try:
-            # Make sure all models are imported before creating tables
-            from app.models.user import User
-            from app.models.workout import Workout
-            from app.models.exercise import Exercise, ExerciseSet
-            from app.models.friendship import Friendship
-            
-            # Create tables if they don't exist
-            db.create_all()
-            
-            # Ensure required columns exist
+            # Check if the exercise tables exist
             from sqlalchemy import inspect
             inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
             
-            # Check if user table has last_workout_at column
-            user_columns = [col['name'] for col in inspector.get_columns('user')]
-            if 'last_workout_at' not in user_columns:
-                db.session.execute("ALTER TABLE \"user\" ADD COLUMN last_workout_at TIMESTAMP")
-            
-            # Check if workout table has subtype column
-            if inspector.has_table('workout'):
-                workout_columns = [col['name'] for col in inspector.get_columns('workout')]
+            if 'workout' not in tables:
+                db.create_all()
+            else:
+                # Check for new tables that might be missing
+                if 'exercise' not in tables:
+                    Exercise.__table__.create(db.engine)
+                    app.logger.info("Created Exercise table")
+                
+                if 'exercise_set' not in tables:
+                    ExerciseSet.__table__.create(db.engine)
+                    app.logger.info("Created ExerciseSet table")
+                
+                # Check if we need to add the subtype column to the workout table
+                workout_columns = [c['name'] for c in inspector.get_columns('workout')]
                 if 'subtype' not in workout_columns:
                     db.session.execute("ALTER TABLE workout ADD COLUMN subtype VARCHAR(50)")
-            
-            db.session.commit()
-            
-            # Check if exercise and exercise_set tables exist
-            if not inspector.has_table('exercise'):
-                print("Creating exercise table...")
-                Exercise.__table__.create(db.engine)
-            
-            if not inspector.has_table('exercise_set'):
-                print("Creating exercise_set table...")
-                ExerciseSet.__table__.create(db.engine)
-                
-            db.session.commit()
+                    db.session.commit()
+                    app.logger.info("Added subtype column to Workout table")
         except Exception as e:
-            print(f"Database initialization error (non-fatal): {e}")
-            db.session.rollback()
+            app.logger.error(f"Error creating tables: {e}")
     
     # Register error handlers
     @app.errorhandler(500)
