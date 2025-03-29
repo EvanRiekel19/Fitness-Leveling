@@ -138,3 +138,48 @@ def debug():
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}) 
+
+@bp.route('/debug-exercise')
+def debug_exercise():
+    """Debug endpoint to check and create exercise tables."""
+    from app import db
+    from sqlalchemy import inspect
+    from flask import jsonify
+    from app.models.exercise import Exercise, ExerciseSet
+    
+    result = {}
+    
+    try:
+        # Check if the tables exist
+        inspector = inspect(db.engine)
+        result['has_exercise_table'] = inspector.has_table('exercise')
+        result['has_exercise_set_table'] = inspector.has_table('exercise_set')
+        
+        # Create the tables if they don't exist
+        if not result['has_exercise_table']:
+            try:
+                Exercise.__table__.create(db.engine)
+                result['created_exercise_table'] = True
+            except Exception as e:
+                result['create_exercise_error'] = str(e)
+        
+        if not result['has_exercise_set_table']:
+            try:
+                ExerciseSet.__table__.create(db.engine)
+                result['created_exercise_set_table'] = True
+            except Exception as e:
+                result['create_exercise_set_error'] = str(e)
+        
+        # Get the columns if the tables exist
+        if result['has_exercise_table'] or result.get('created_exercise_table'):
+            result['exercise_columns'] = [col['name'] for col in inspector.get_columns('exercise')]
+        
+        if result['has_exercise_set_table'] or result.get('created_exercise_set_table'):
+            result['exercise_set_columns'] = [col['name'] for col in inspector.get_columns('exercise_set')]
+        
+        # List all tables in the database
+        result['all_tables'] = inspector.get_table_names()
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}) 

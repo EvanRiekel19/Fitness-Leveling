@@ -28,6 +28,12 @@ def create_app(config_class=Config):
     # Ensure database tables exist
     with app.app_context():
         try:
+            # Make sure all models are imported before creating tables
+            from app.models.user import User
+            from app.models.workout import Workout
+            from app.models.exercise import Exercise, ExerciseSet
+            from app.models.friendship import Friendship
+            
             # Create tables if they don't exist
             db.create_all()
             
@@ -46,6 +52,17 @@ def create_app(config_class=Config):
                 if 'subtype' not in workout_columns:
                     db.session.execute("ALTER TABLE workout ADD COLUMN subtype VARCHAR(50)")
             
+            db.session.commit()
+            
+            # Check if exercise and exercise_set tables exist
+            if not inspector.has_table('exercise'):
+                print("Creating exercise table...")
+                Exercise.__table__.create(db.engine)
+            
+            if not inspector.has_table('exercise_set'):
+                print("Creating exercise_set table...")
+                ExerciseSet.__table__.create(db.engine)
+                
             db.session.commit()
         except Exception as e:
             print(f"Database initialization error (non-fatal): {e}")
