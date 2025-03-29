@@ -3,6 +3,7 @@
 {% block title %}{{ workout.name }} - Fitness Leveling{% endblock %}
 
 {% block content %}
+{% from app.models.exercise import ExerciseSet %}
 <div class="max-w-2xl mx-auto">
     <div class="bg-dark-surface rounded-xl shadow-sm p-6">
         <div class="flex justify-between items-start mb-6">
@@ -140,15 +141,15 @@
             {% endif %}
             
             <!-- Exercises List (for strength workouts) -->
-            {% if workout.type == 'strength' and workout.exercises.count() > 0 %}
+            {% if exercises|length > 0 %}
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
                 <h3 class="text-sm font-medium text-gray-300 mb-3">Exercises</h3>
                 <div class="space-y-6">
-                    {% for exercise in workout.exercises %}
+                    {% for exercise_data in exercises %}
                     <div class="border-t border-gray-700 pt-4 first:border-t-0 first:pt-0">
-                        <h4 class="font-medium text-gray-200 text-base mb-3">{{ exercise.name }}</h4>
+                        <h4 class="font-medium text-gray-200 text-base mb-3">{{ exercise_data.model.name }}</h4>
                         
-                        {% if exercise.sets.count() > 0 %}
+                        {% if exercise_data.ordered_sets|length > 0 %}
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left text-gray-300">
                                 <thead class="text-xs text-gray-400 bg-dark-surface rounded-t-lg">
@@ -160,7 +161,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for set in exercise.sets %}
+                                    {% for set in exercise_data.ordered_sets %}
                                     <tr class="border-t border-gray-800 {% if loop.last %}rounded-b-lg{% endif %}">
                                         <td class="px-3 py-2 font-medium {% if loop.last %}rounded-bl-lg{% endif %}">{{ set.set_number }}</td>
                                         <td class="px-3 py-2">{% if set.weight %}{{ set.weight|round(1) }}{% else %}--{% endif %}</td>
@@ -200,8 +201,8 @@
             <!-- Notes -->
             {% if workout.notes %}
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-gray-300 mb-2">Notes</h3>
-                <p class="text-gray-300 text-sm whitespace-pre-line">{{ workout.notes }}</p>
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Notes</h3>
+                <p class="text-gray-200 whitespace-pre-line">{{ workout.notes }}</p>
             </div>
             {% endif %}
             

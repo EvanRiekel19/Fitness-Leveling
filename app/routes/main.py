@@ -183,3 +183,55 @@ def debug_exercise():
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}) 
+
+@bp.route('/debug/workout/<int:workout_id>')
+@login_required
+def debug_workout(workout_id):
+    """Debug route to check workout data"""
+    from app.models.workout import Workout
+    from app.models.exercise import Exercise, ExerciseSet
+    from flask import jsonify
+    
+    workout = Workout.query.get_or_404(workout_id)
+    
+    # Ensure the user owns this workout
+    if workout.user_id != current_user.id:
+        return jsonify({"error": "Not authorized"}), 403
+    
+    # Collect workout data
+    workout_data = {
+        "id": workout.id,
+        "name": workout.name,
+        "type": workout.type,
+        "subtype": workout.subtype,
+        "duration": workout.duration,
+        "intensity": workout.intensity,
+        "xp_earned": workout.xp_earned,
+        "created_at": workout.created_at.isoformat(),
+        "notes": workout.notes,
+        "exercises_count": workout.exercises.count(),
+        "exercises": []
+    }
+    
+    # Get exercises
+    for exercise in workout.exercises:
+        exercise_data = {
+            "id": exercise.id,
+            "name": exercise.name,
+            "sets_count": exercise.sets.count(),
+            "sets": []
+        }
+        
+        # Get sets for each exercise
+        for set_data in exercise.sets:
+            exercise_data["sets"].append({
+                "id": set_data.id,
+                "set_number": set_data.set_number,
+                "reps": set_data.reps,
+                "weight": set_data.weight,
+                "notes": set_data.notes
+            })
+        
+        workout_data["exercises"].append(exercise_data)
+    
+    return jsonify(workout_data) 

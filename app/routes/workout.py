@@ -256,6 +256,8 @@ def get_exercise_options():
 @bp.route('/workouts/<int:workout_id>')
 @login_required
 def view(workout_id):
+    from app.models.exercise import ExerciseSet
+    
     workout = Workout.query.get_or_404(workout_id)
     
     # Ensure the user owns this workout
@@ -263,4 +265,13 @@ def view(workout_id):
         flash('You do not have permission to view this workout', 'error')
         return redirect(url_for('workout.index'))
     
-    return render_template('workout/view.html', workout=workout)
+    # Process exercises and their sets for ordered display
+    exercises = []
+    for exercise in workout.exercises:
+        sets = exercise.sets.order_by(ExerciseSet.set_number).all()
+        exercises.append({
+            'model': exercise,
+            'ordered_sets': sets
+        })
+    
+    return render_template('workout/view.html', workout=workout, exercises=exercises)
