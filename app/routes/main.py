@@ -235,3 +235,88 @@ def debug_workout(workout_id):
         workout_data["exercises"].append(exercise_data)
     
     return jsonify(workout_data) 
+
+@bp.route('/debug/workout-exercises/<int:workout_id>')
+@login_required
+def debug_workout_exercises(workout_id):
+    """Debug route to verify exercise data for a workout"""
+    from app.models.workout import Workout
+    from app.models.exercise import Exercise, ExerciseSet
+    from flask import jsonify
+    import json
+    from sqlalchemy import inspect
+    
+    # Direct queries to check database state
+    workout = Workout.query.get_or_404(workout_id)
+    
+    # Ensure the user owns this workout
+    if workout.user_id != current_user.id:
+        return jsonify({"error": "Not authorized"}), 403
+    
+    # Check if the exercise table exists
+    inspector = inspect(db.engine)
+    tables = inspector.get_table_names()
+    exercise_table_exists = 'exercise' in tables
+    exercise_set_table_exists = 'exercise_set' in tables
+    
+    # Query exercises directly with SQL
+    exercises_sql = []
+    if exercise_table_exists:
+        result = db.session.execute(f"SELECT * FROM exercise WHERE workout_id = {workout_id}")
+        for row in result:
+            exercises_sql.append(dict(row._mapping))
+    
+    # Get sets for exercises
+    sets_sql = []
+    if exercise_set_table_exists and exercises_sql:
+        for ex in exercises_sql:
+            result = db.session.execute(f"SELECT * FROM exercise_set WHERE exercise_id = {ex['id']}")
+            for row in result:
+                sets_sql.append(dict(row._mapping))
+    
+    # Use ORM to get data
+    exercises_orm = []
+    try:
+        query_result = Exercise.query.filter_by(workout_id=workout_id).all()
+        for exercise in query_result:
+            ex_dict = {
+                'id': exercise.id,
+                'name': exercise.name,
+                'sets': []
+            }
+            
+            try:
+                for s in exercise.sets:
+                    ex_dict['sets'].append({
+                        'id': s.id,
+                        'set_number': s.set_number,
+                        'reps': s.reps,
+                        'weight': s.weight,
+                        'notes': s.notes
+                    })
+            except Exception as e:
+                ex_dict['sets_error'] = str(e)
+                
+            exercises_orm.append(ex_dict)
+    except Exception as e:
+        exercises_orm = [{'error': str(e)}]
+    
+    response = {
+        'workout': {
+            'id': workout.id,
+            'name': workout.name,
+            'type': workout.type,
+            'subtype': workout.subtype
+        },
+        'tables': {
+            'exercise_table_exists': exercise_table_exists,
+            'exercise_set_table_exists': exercise_set_table_exists
+        },
+        'exercises': {
+            'sql_query': exercises_sql,
+            'sets_sql': sets_sql,
+            'orm_query': exercises_orm
+        }
+    }
+    
+    return jsonify(response) 
