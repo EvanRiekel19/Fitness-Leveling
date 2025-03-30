@@ -105,7 +105,7 @@
                     {% if workout.type == 'flexibility' %}
                     <div class="flex justify-between">
                         <span class="text-gray-400">Duration bonus:</span>
-                        <span class="text-gray-200">+{{ (workout.duration * 1.5)|int }} XP</span>
+                        <span class="text-gray-200">+{{ ((workout.duration|default(0)) * 1.5)|int }} XP</span>
                     </div>
                     {% endif %}
                     
@@ -231,7 +231,9 @@
             
             <!-- Date Info -->
             <div class="mt-4 text-right text-xs text-gray-400">
+                {% if workout.created_at %}
                 Logged on {{ workout.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                {% endif %}
             </div>
         </div>
     </div>
