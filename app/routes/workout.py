@@ -256,9 +256,8 @@ def get_exercise_options():
 @bp.route('/workouts/<int:workout_id>')
 @login_required
 def view(workout_id):
-    # Simple try block for the entire function
+    # Get the workout
     try:
-        # Simple query for the workout
         workout = Workout.query.get_or_404(workout_id)
         
         # Security check
@@ -266,79 +265,80 @@ def view(workout_id):
             flash('You do not have permission to view this workout', 'error')
             return redirect(url_for('workout.index'))
         
-        # Get exercises - simpler approach
+        # Variable to store all exercises and their sets
         exercises = []
         
-        # Only try to get exercises if this is a strength workout
+        # Only get exercises for strength workouts
         if workout.type == 'strength':
+            # Get all exercises for this workout using raw SQL with proper parameters
             try:
-                # Log for debugging
-                print(f"DEBUG: Retrieving exercises for workout {workout_id}")
+                # Get all exercises
+                exercise_sql = """
+                    SELECT id, workout_id, name 
+                    FROM exercise 
+                    WHERE workout_id = :workout_id
+                """
+                exercises_result = db.session.execute(exercise_sql, {"workout_id": workout_id})
+                exercise_rows = exercises_result.fetchall()
                 
-                # Get all exercises using direct SQL (better reliability)
-                exercise_query = "SELECT id, workout_id, name FROM exercise WHERE workout_id = :workout_id"
-                exercise_rows = db.session.execute(exercise_query, {'workout_id': workout_id}).fetchall()
-                print(f"DEBUG: Found {len(exercise_rows)} exercises using SQL")
+                print(f"Found {len(exercise_rows)} exercises for workout {workout_id}")
                 
                 # Process each exercise
-                for exercise_row in exercise_rows:
-                    exercise_id = exercise_row[0]
-                    exercise_name = exercise_row[2]
+                for ex_row in exercise_rows:
+                    ex_id = ex_row[0]
+                    ex_name = ex_row[2]
                     
-                    print(f"DEBUG: Processing exercise: {exercise_id} - {exercise_name}")
+                    print(f"Processing exercise {ex_id}: {ex_name}")
                     
-                    # Create a basic exercise object
-                    exercise = Exercise(
-                        id=exercise_id,
-                        workout_id=workout_id,
-                        name=exercise_name
-                    )
-                    
-                    # Get all sets for this exercise using direct SQL
-                    set_query = """
-                        SELECT id, exercise_id, set_number, reps, weight, notes 
-                        FROM exercise_set 
-                        WHERE exercise_id = :exercise_id 
+                    # Get all sets for this exercise using SQL
+                    sets_sql = """
+                        SELECT id, exercise_id, set_number, reps, weight, notes
+                        FROM exercise_set
+                        WHERE exercise_id = :exercise_id
                         ORDER BY set_number
                     """
-                    set_rows = db.session.execute(set_query, {'exercise_id': exercise_id}).fetchall()
-                    print(f"DEBUG: Found {len(set_rows)} sets for exercise {exercise_name}")
+                    sets_result = db.session.execute(sets_sql, {"exercise_id": ex_id})
+                    set_rows = sets_result.fetchall()
                     
-                    # Map raw SQL rows to ExerciseSet objects
-                    sets = []
+                    print(f"Found {len(set_rows)} sets for exercise {ex_name}")
+                    
+                    # Create exercise object
+                    exercise = {
+                        'model': {
+                            'id': ex_id,
+                            'name': ex_name
+                        },
+                        'ordered_sets': []
+                    }
+                    
+                    # Add all sets to this exercise
                     for set_row in set_rows:
-                        # Create exercise set objects directly from SQL data
-                        set_obj = ExerciseSet(
-                            id=set_row[0],
-                            exercise_id=set_row[1],
-                            set_number=set_row[2], 
-                            reps=set_row[3],
-                            weight=set_row[4],
-                            notes=set_row[5] if len(set_row) > 5 and set_row[5] is not None else ""
-                        )
-                        sets.append(set_obj)
-                        print(f"DEBUG: Added set {set_obj.set_number}: {set_obj.reps} reps at {set_obj.weight}kg")
+                        # Create a set dictionary
+                        exercise_set = {
+                            'id': set_row[0],
+                            'set_number': set_row[2],
+                            'reps': set_row[3],
+                            'weight': set_row[4],
+                            'notes': set_row[5] if set_row[5] else ''
+                        }
+                        exercise['ordered_sets'].append(exercise_set)
+                        print(f"  Added set {exercise_set['set_number']}: {exercise_set['reps']} reps at {exercise_set['weight']}kg")
                     
-                    # Add this exercise and its sets to our collection
-                    exercises.append({
-                        'model': exercise,
-                        'ordered_sets': sets
-                    })
+                    # Add this exercise to our list
+                    exercises.append(exercise)
+            
             except Exception as e:
-                # Just log the error, don't crash
                 import traceback
-                print(f"ERROR getting exercises: {e}")
+                print(f"Error fetching exercises: {e}")
                 print(traceback.format_exc())
+                # Don't fail completely - continue with empty exercises list
         
-        # Basic template render with workout data
-        return render_template('workout/view.html', 
-                              workout=workout, 
-                              exercises=exercises)
-                              
+        # Render the template with all our data
+        return render_template('workout/view.html', workout=workout, exercises=exercises)
+    
     except Exception as e:
-        # Log the error but return a user-friendly message
         import traceback
-        print(f"ERROR viewing workout {workout_id}: {e}")
+        print(f"Error loading workout {workout_id}: {e}")
         print(traceback.format_exc())
-        flash(f"Error loading workout. Please try again.", "error")
+        flash('Error loading workout details. Please try again.', 'error')
         return redirect(url_for('workout.index'))
