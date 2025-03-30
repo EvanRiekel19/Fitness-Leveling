@@ -256,12 +256,8 @@ def get_exercise_options():
 @bp.route('/workouts/<int:workout_id>')
 @login_required
 def view(workout_id):
-    from app.models.exercise import ExerciseSet, Exercise
-    from flask import current_app
-    import json
-    
     try:
-        # Get workout with a direct query that includes exercises
+        # Get workout
         workout = Workout.query.get_or_404(workout_id)
         
         # Ensure the user owns this workout
@@ -269,54 +265,29 @@ def view(workout_id):
             flash('You do not have permission to view this workout', 'error')
             return redirect(url_for('workout.index'))
         
-        # Debug information to identify any issues
-        current_app.logger.info(f"Viewing workout: {workout.id} - {workout.name} - Type: {workout.type}")
-        
-        # Initialize exercises list
+        # Get exercises - simpler approach to avoid errors
         exercises = []
         
-        # Check if the exercise table exists before querying it
         try:
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            tables = inspector.get_table_names()
+            # Query exercises directly - no inspector checks
+            exercises_data = db.session.query(Exercise).filter_by(workout_id=workout_id).all()
             
-            if 'exercise' in tables:
-                # Get all exercises for this workout
-                exercises_query = Exercise.query.filter_by(workout_id=workout.id).all()
+            for exercise in exercises_data:
+                # Get sets for this exercise
+                sets = db.session.query(ExerciseSet).filter_by(exercise_id=exercise.id).order_by(ExerciseSet.set_number).all()
                 
-                for exercise in exercises_query:
-                    current_app.logger.info(f"Processing exercise: {exercise.id} - {exercise.name}")
-                    
-                    # Get sets for this exercise, ordered by set number
-                    try:
-                        if 'exercise_set' in tables:
-                            sets = ExerciseSet.query.filter_by(exercise_id=exercise.id).order_by(ExerciseSet.set_number).all()
-                            current_app.logger.info(f"Found {len(sets)} sets for exercise {exercise.name}")
-                        else:
-                            current_app.logger.warning("exercise_set table doesn't exist")
-                            sets = []
-                    except Exception as e:
-                        current_app.logger.error(f"Error querying sets for exercise {exercise.id}: {e}")
-                        sets = []
-                    
-                    exercises.append({
-                        'model': exercise,
-                        'ordered_sets': sets
-                    })
-                
-                if not exercises and workout.type == 'strength':
-                    current_app.logger.warning(f"No exercises found in ORM for strength workout {workout_id}")
-            else:
-                current_app.logger.warning("exercise table doesn't exist")
+                exercises.append({
+                    'model': exercise,
+                    'ordered_sets': sets
+                })
         except Exception as e:
-            current_app.logger.error(f"Error checking database tables: {e}")
-            flash(f"There was an error retrieving exercise data. Please contact support.", "error")
-        
+            # Don't throw error for exercise issues
+            print(f"Error retrieving exercises: {e}")
+            
         return render_template('workout/view.html', workout=workout, exercises=exercises)
     except Exception as e:
         import traceback
-        current_app.logger.error(f"Error viewing workout {workout_id}: {e}")
-        current_app.logger.error(traceback.format_exc())
-        flash(f"There was an error loading this workout. Please try again later.", "error")
+        print(f"Error viewing workout {workout_id}: {e}")
+        print(traceback.format_exc())
+        flash(f"Error loading workout. Please try again.", "error")
         return redirect(url_for('workout.index'))

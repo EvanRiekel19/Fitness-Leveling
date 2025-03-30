@@ -73,28 +73,33 @@
                     </div>
                     {% endif %}
                     
-                    {% if workout.type == 'strength' and exercises|default([])|length > 0 %}
-                    {% set total_sets = namespace(value=0) %}
-                    {% set total_reps = namespace(value=0) %}
-                    
-                    {% for exercise_data in exercises %}
-                        {% for set in exercise_data.ordered_sets|default([]) %}
-                            {% set total_sets.value = total_sets.value + 1 %}
-                            {% if set.reps %}
-                                {% set total_reps.value = total_reps.value + set.reps %}
+                    <!-- Only include this section if exercises exist and have sets -->
+                    {% if exercises and exercises|length > 0 %}
+                        {% set total_sets = namespace(value=0) %}
+                        {% set total_reps = namespace(value=0) %}
+                        
+                        {% for exercise_data in exercises %}
+                            {% if exercise_data.ordered_sets %}
+                                {% for set in exercise_data.ordered_sets %}
+                                    {% set total_sets.value = total_sets.value + 1 %}
+                                    {% if set.reps %}
+                                        {% set total_reps.value = total_reps.value + set.reps %}
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
                         {% endfor %}
-                    {% endfor %}
-                    
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Sets ({{ total_sets.value }}):</span>
-                        <span class="text-gray-200">+{{ (total_sets.value * 12)|int }} XP</span>
-                    </div>
-                    
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Reps ({{ total_reps.value }}):</span>
-                        <span class="text-gray-200">+{{ (total_reps.value * 0.35)|int }} XP</span>
-                    </div>
+                        
+                        {% if total_sets.value > 0 %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Sets ({{ total_sets.value }}):</span>
+                            <span class="text-gray-200">+{{ (total_sets.value * 12)|int }} XP</span>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Reps ({{ total_reps.value }}):</span>
+                            <span class="text-gray-200">+{{ (total_reps.value * 0.35)|int }} XP</span>
+                        </div>
+                        {% endif %}
                     {% endif %}
                     
                     {% if workout.type == 'flexibility' %}
@@ -150,7 +155,7 @@
             {% endif %}
             
             <!-- Exercises List -->
-            {% if exercises|length > 0 %}
+            {% if exercises and exercises|length > 0 %}
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
                 <h3 class="text-sm font-medium text-gray-300 mb-3">Exercises</h3>
                 <div class="space-y-6">
@@ -158,7 +163,7 @@
                     <div class="border-t border-gray-700 pt-4 first:border-t-0 first:pt-0">
                         <h4 class="font-medium text-gray-200 text-base mb-3">{{ exercise_data.model.name }}</h4>
                         
-                        {% if exercise_data.ordered_sets|length > 0 %}
+                        {% if exercise_data.ordered_sets and exercise_data.ordered_sets|length > 0 %}
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left text-gray-300">
                                 <thead class="text-xs text-gray-400 bg-dark-surface rounded-t-lg">
