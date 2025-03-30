@@ -73,12 +73,12 @@
                     </div>
                     {% endif %}
                     
-                    {% if workout.type == 'strength' %}
+                    {% if workout.type == 'strength' and exercises|default([])|length > 0 %}
                     {% set total_sets = namespace(value=0) %}
                     {% set total_reps = namespace(value=0) %}
                     
                     {% for exercise_data in exercises %}
-                        {% for set in exercise_data.ordered_sets %}
+                        {% for set in exercise_data.ordered_sets|default([]) %}
                             {% set total_sets.value = total_sets.value + 1 %}
                             {% if set.reps %}
                                 {% set total_reps.value = total_reps.value + set.reps %}
