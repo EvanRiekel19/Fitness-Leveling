@@ -90,10 +90,21 @@
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
                 <h3 class="text-sm font-medium text-gray-300 mb-3">Exercises</h3>
                 
+                <!-- Debug info to check exercise data -->
+                <div class="hidden bg-yellow-800/20 p-2 mb-4 rounded text-xs">
+                    <p class="text-yellow-200">Found {{ exercises|length }} exercises</p>
+                    {% for exercise_data in exercises %}
+                        <p class="text-yellow-200 mt-1">
+                            {{ exercise_data.model.name }}: {{ exercise_data.ordered_sets|length }} sets
+                        </p>
+                    {% endfor %}
+                </div>
+                
                 {% for exercise_data in exercises %}
                 <div class="{% if not loop.first %}border-t border-gray-700 mt-4 pt-4{% endif %}">
                     <h4 class="font-medium text-gray-200">{{ exercise_data.model.name }}</h4>
                     
+                    <!-- Make sure we have sets to display -->
                     {% if exercise_data.ordered_sets and exercise_data.ordered_sets|length > 0 %}
                     <div class="mt-2 overflow-x-auto">
                         <table class="w-full text-sm text-left text-gray-300">
@@ -109,9 +120,9 @@
                                 {% for set in exercise_data.ordered_sets %}
                                 <tr class="border-t border-gray-800">
                                     <td class="p-2">{{ set.set_number }}</td>
-                                    <td class="p-2">{{ set.weight if set.weight else '--' }}</td>
-                                    <td class="p-2">{{ set.reps if set.reps else '--' }}</td>
-                                    <td class="p-2 text-gray-400">{{ set.notes }}</td>
+                                    <td class="p-2">{% if set.weight %}{{ set.weight }}{% else %}--{% endif %}</td>
+                                    <td class="p-2">{% if set.reps %}{{ set.reps }}{% else %}--{% endif %}</td>
+                                    <td class="p-2 text-gray-400">{% if set.notes %}{{ set.notes }}{% endif %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
