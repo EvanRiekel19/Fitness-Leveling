@@ -256,37 +256,42 @@ def get_exercise_options():
 @bp.route('/workouts/<int:workout_id>')
 @login_required
 def view(workout_id):
+    # Simple try block for the entire function
     try:
-        # Get workout
+        # Simple query for the workout
         workout = Workout.query.get_or_404(workout_id)
         
-        # Ensure the user owns this workout
+        # Security check
         if workout.user_id != current_user.id:
             flash('You do not have permission to view this workout', 'error')
             return redirect(url_for('workout.index'))
         
-        # Get exercises - simpler approach to avoid errors
+        # Get exercises - simpler approach
         exercises = []
         
-        try:
-            # Query exercises directly
-            exercises_data = Exercise.query.filter_by(workout_id=workout_id).all()
-            
-            for exercise in exercises_data:
-                # Get sets for this exercise
-                sets = ExerciseSet.query.filter_by(exercise_id=exercise.id).order_by(ExerciseSet.set_number).all()
-                
-                exercises.append({
-                    'model': exercise,
-                    'ordered_sets': sets
-                })
-        except Exception as e:
-            # Don't throw error for exercise issues
-            print(f"Error retrieving exercises: {e}")
-            
-        # Render template
-        return render_template('workout/view.html', workout=workout, exercises=exercises)
+        # Only try to get exercises if this is a strength workout
+        if workout.type == 'strength':
+            try:
+                # Query exercises directly
+                for exercise in Exercise.query.filter_by(workout_id=workout_id).all():
+                    # Get sets for this exercise
+                    sets = ExerciseSet.query.filter_by(exercise_id=exercise.id).order_by(ExerciseSet.set_number).all()
+                    
+                    exercises.append({
+                        'model': exercise,
+                        'ordered_sets': sets
+                    })
+            except Exception as e:
+                # Just log the error, don't crash
+                print(f"Error getting exercises: {e}")
+        
+        # Basic template render with workout data
+        return render_template('workout/view.html', 
+                              workout=workout, 
+                              exercises=exercises)
+                              
     except Exception as e:
+        # Log the error but return a user-friendly message
         import traceback
         print(f"Error viewing workout {workout_id}: {e}")
         print(traceback.format_exc())

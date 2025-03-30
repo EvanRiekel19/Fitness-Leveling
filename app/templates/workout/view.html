@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ workout.name }} - Fitness Leveling{% endblock %}
+{% block title %}Workout Details - Fitness Leveling{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto">
@@ -27,214 +27,103 @@
         
         <!-- Workout Details -->
         <div class="space-y-4">
-            <!-- Workout Metadata -->
+            <!-- Basic Workout Information -->
             <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div class="bg-dark-hover p-3 rounded-lg text-center">
                     <span class="block text-xs text-gray-400">Type</span>
-                    <span class="block text-gray-200 font-medium">{{ workout.get_readable_type() }}</span>
+                    <span class="block text-gray-200 font-medium">{{ workout.type|capitalize }}</span>
                 </div>
                 
                 <div class="bg-dark-hover p-3 rounded-lg text-center">
                     <span class="block text-xs text-gray-400">Duration</span>
-                    <span class="block text-gray-200 font-medium">{{ workout.duration }} min</span>
+                    <span class="block text-gray-200 font-medium">{{ workout.duration if workout.duration else 0 }} min</span>
                 </div>
                 
                 <div class="bg-dark-hover p-3 rounded-lg text-center">
                     <span class="block text-xs text-gray-400">Intensity</span>
-                    <span class="block text-gray-200 font-medium">{{ workout.intensity }}/10</span>
+                    <span class="block text-gray-200 font-medium">{{ workout.intensity if workout.intensity else 0 }}/10</span>
                 </div>
                 
                 <div class="bg-dark-hover p-3 rounded-lg text-center">
                     <span class="block text-xs text-gray-400">XP Earned</span>
-                    <span class="block text-gray-200 font-medium">+{{ workout.xp_earned }}</span>
+                    <span class="block text-gray-200 font-medium">+{{ workout.xp_earned if workout.xp_earned else 0 }}</span>
                 </div>
             </div>
             
-            <!-- XP Calculation -->
-            <div class="bg-dark-hover p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-gray-300 mb-3">XP Breakdown</h3>
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Base XP:</span>
-                        <span class="text-gray-200">75 XP</span>
-                    </div>
-                    
-                    {% if workout.type == 'strength' and workout.duration > 45 %}
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Long workout bonus:</span>
-                        <span class="text-gray-200">+{{ ((workout.duration|default(0) - 45) * 2)|int }} XP</span>
-                    </div>
-                    {% endif %}
-                    
-                    {% if workout.type == 'cardio' and workout.distance %}
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Distance ({{ workout.distance|default(0)|round(2) }} km):</span>
-                        <span class="text-gray-200">+{{ (workout.distance|default(0) * 30)|int }} XP</span>
-                    </div>
-                    {% endif %}
-                    
-                    <!-- Only include this section if exercises exist and have sets -->
-                    {% if exercises and exercises|length > 0 %}
-                        {% set total_sets = namespace(value=0) %}
-                        {% set total_reps = namespace(value=0) %}
-                        
-                        {% for exercise_data in exercises %}
-                            {% if exercise_data.ordered_sets %}
-                                {% for set in exercise_data.ordered_sets %}
-                                    {% set total_sets.value = total_sets.value + 1 %}
-                                    {% if set.reps %}
-                                        {% set total_reps.value = total_reps.value + set.reps %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        {% endfor %}
-                        
-                        {% if total_sets.value > 0 %}
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Sets ({{ total_sets.value }}):</span>
-                            <span class="text-gray-200">+{{ (total_sets.value * 12)|int }} XP</span>
-                        </div>
-                        
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Reps ({{ total_reps.value }}):</span>
-                            <span class="text-gray-200">+{{ (total_reps.value * 0.35)|int }} XP</span>
-                        </div>
-                        {% endif %}
-                    {% endif %}
-                    
-                    {% if workout.type == 'flexibility' %}
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Duration bonus:</span>
-                        <span class="text-gray-200">+{{ ((workout.duration|default(0)) * 1.5)|int }} XP</span>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Duration multiplier:</span>
-                        <span class="text-gray-200">×{{ (min(3, max(1, (workout.duration or 0) / 30)))|round(2) }}</span>
-                    </div>
-                    
-                    <div class="flex justify-between">
-                        <span class="text-gray-400">Intensity multiplier:</span>
-                        <span class="text-gray-200">×{{ (1 + ((workout.intensity or 0) / 10))|round(2) }}</span>
-                    </div>
-                    
-                    <div class="border-t border-gray-700 pt-2 mt-2 flex justify-between font-semibold">
-                        <span class="text-gray-300">Total XP:</span>
-                        <span class="text-blue-400">{{ workout.xp_earned }} XP</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Cardio Stats (only show if relevant) -->
-            {% if workout.type == 'cardio' and workout.distance %}
+            <!-- Basic Workout Stats -->
+            {% if workout.type == 'strength' and workout.sets %}
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-gray-300 mb-3">Cardio Stats</h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Workout Stats</h3>
+                <div class="grid grid-cols-2 gap-4">
                     <div class="text-center">
-                        <span class="block text-xs text-gray-400">Distance</span>
-                        <span class="block text-gray-200">{{ workout.distance|round(2) }} km</span>
-                        {% if workout.get_distance_miles() %}
-                        <span class="block text-xs text-gray-400">{{ workout.get_distance_miles()|round(2) }} mi</span>
-                        {% endif %}
+                        <span class="block text-xs text-gray-400">Sets</span>
+                        <span class="block text-gray-200">{{ workout.sets }}</span>
                     </div>
-                    
-                    {% if workout.get_pace_per_km() %}
                     <div class="text-center">
-                        <span class="block text-xs text-gray-400">Pace (Metric)</span>
-                        <span class="block text-gray-200">{{ workout.get_pace_per_km() }}</span>
+                        <span class="block text-xs text-gray-400">Reps per Set</span>
+                        <span class="block text-gray-200">{{ workout.reps }}</span>
                     </div>
-                    {% endif %}
-                    
-                    {% if workout.get_pace_per_mile() %}
-                    <div class="text-center">
-                        <span class="block text-xs text-gray-400">Pace (Imperial)</span>
-                        <span class="block text-gray-200">{{ workout.get_pace_per_mile() }}</span>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
             {% endif %}
             
-            <!-- Exercises List -->
-            {% if exercises and exercises|length > 0 %}
+            {% if workout.type == 'cardio' and workout.distance %}
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-gray-300 mb-3">Exercises</h3>
-                <div class="space-y-6">
-                    {% for exercise_data in exercises %}
-                    <div class="border-t border-gray-700 pt-4 first:border-t-0 first:pt-0">
-                        <h4 class="font-medium text-gray-200 text-base mb-3">{{ exercise_data.model.name }}</h4>
-                        
-                        {% if exercise_data.ordered_sets and exercise_data.ordered_sets|length > 0 %}
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left text-gray-300">
-                                <thead class="text-xs text-gray-400 bg-dark-surface rounded-t-lg">
-                                    <tr>
-                                        <th class="px-3 py-2 rounded-tl-lg">Set</th>
-                                        <th class="px-3 py-2">Weight (kg)</th>
-                                        <th class="px-3 py-2">Reps</th>
-                                        <th class="px-3 py-2 rounded-tr-lg">Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for set in exercise_data.ordered_sets %}
-                                    <tr class="border-t border-gray-800 {% if loop.last %}rounded-b-lg{% endif %}">
-                                        <td class="px-3 py-2 font-medium {% if loop.last %}rounded-bl-lg{% endif %}">{{ set.set_number }}</td>
-                                        <td class="px-3 py-2">{% if set.weight %}{{ set.weight|round(1) }}{% else %}--{% endif %}</td>
-                                        <td class="px-3 py-2">{% if set.reps %}{{ set.reps }}{% else %}--{% endif %}</td>
-                                        <td class="px-3 py-2 text-gray-400 {% if loop.last %}rounded-br-lg{% endif %}">{{ set.notes|default('') }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% else %}
-                        <p class="text-sm text-gray-400 italic">No sets recorded for this exercise</p>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Cardio Stats</h3>
+                <div class="text-center">
+                    <span class="block text-xs text-gray-400">Distance</span>
+                    <span class="block text-gray-200">{{ workout.distance }} km</span>
                 </div>
             </div>
-            {% else %}
-                {% if workout.type == 'strength' %}
-                <div class="mt-6 bg-dark-hover p-4 rounded-lg">
-                    <h3 class="text-sm font-medium text-gray-300 mb-3">Workout Details</h3>
-                    
-                    {% if workout.sets %}
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="text-center">
-                            <span class="block text-xs text-gray-400">Sets</span>
-                            <span class="block text-gray-200">{{ workout.sets }}</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="block text-xs text-gray-400">Reps per Set</span>
-                            <span class="block text-gray-200">{{ workout.reps }}</span>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="py-3 text-center">
-                        <p class="text-gray-400 text-sm">No detailed exercise information available for this workout.</p>
-                        <p class="text-gray-400 text-sm mt-1">Next time, use the "Detailed Strength Training Form" for complete exercise tracking.</p>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
             {% endif %}
             
             <!-- Notes -->
             {% if workout.notes %}
             <div class="mt-6 bg-dark-hover p-4 rounded-lg">
                 <h3 class="text-sm font-medium text-gray-300 mb-3">Notes</h3>
-                <p class="text-gray-200 whitespace-pre-line">{{ workout.notes }}</p>
+                <p class="text-gray-200">{{ workout.notes }}</p>
             </div>
             {% endif %}
             
-            <!-- Date Info -->
-            <div class="mt-4 text-right text-xs text-gray-400">
-                {% if workout.created_at %}
-                Logged on {{ workout.created_at.strftime('%B %d, %Y at %I:%M %p') }}
-                {% endif %}
+            <!-- Exercises (only if we have any) -->
+            {% if workout.type == 'strength' and exercises and exercises|length > 0 %}
+            <div class="mt-6 bg-dark-hover p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Exercises</h3>
+                
+                {% for exercise_data in exercises %}
+                <div class="{% if not loop.first %}border-t border-gray-700 mt-4 pt-4{% endif %}">
+                    <h4 class="font-medium text-gray-200">{{ exercise_data.model.name }}</h4>
+                    
+                    {% if exercise_data.ordered_sets and exercise_data.ordered_sets|length > 0 %}
+                    <div class="mt-2 overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-300">
+                            <thead class="text-xs text-gray-400">
+                                <tr>
+                                    <th class="p-2">Set</th>
+                                    <th class="p-2">Weight</th>
+                                    <th class="p-2">Reps</th>
+                                    <th class="p-2">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for set in exercise_data.ordered_sets %}
+                                <tr class="border-t border-gray-800">
+                                    <td class="p-2">{{ set.set_number }}</td>
+                                    <td class="p-2">{{ set.weight if set.weight else '--' }}</td>
+                                    <td class="p-2">{{ set.reps if set.reps else '--' }}</td>
+                                    <td class="p-2 text-gray-400">{{ set.notes }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-400 italic mt-2">No sets recorded</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
