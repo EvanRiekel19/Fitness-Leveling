@@ -134,7 +134,9 @@
                     <div class="text-center">
                         <span class="block text-xs text-gray-400">Distance</span>
                         <span class="block text-gray-200">{{ workout.distance|round(2) }} km</span>
+                        {% if workout.get_distance_miles() %}
                         <span class="block text-xs text-gray-400">{{ workout.get_distance_miles()|round(2) }} mi</span>
+                        {% endif %}
                     </div>
                     
                     {% if workout.get_pace_per_km() %}

@@ -269,12 +269,12 @@ def view(workout_id):
         exercises = []
         
         try:
-            # Query exercises directly - no inspector checks
-            exercises_data = db.session.query(Exercise).filter_by(workout_id=workout_id).all()
+            # Query exercises directly using the imported Exercise model
+            exercises_data = Exercise.query.filter_by(workout_id=workout_id).all()
             
             for exercise in exercises_data:
                 # Get sets for this exercise
-                sets = db.session.query(ExerciseSet).filter_by(exercise_id=exercise.id).order_by(ExerciseSet.set_number).all()
+                sets = ExerciseSet.query.filter_by(exercise_id=exercise.id).order_by(ExerciseSet.set_number).all()
                 
                 exercises.append({
                     'model': exercise,
