@@ -62,14 +62,14 @@
                     {% if workout.type == 'strength' and workout.duration > 45 %}
                     <div class="flex justify-between">
                         <span class="text-gray-400">Long workout bonus:</span>
-                        <span class="text-gray-200">+{{ (workout.duration - 45) * 2 }} XP</span>
+                        <span class="text-gray-200">+{{ ((workout.duration|default(0) - 45) * 2)|int }} XP</span>
                     </div>
                     {% endif %}
                     
                     {% if workout.type == 'cardio' and workout.distance %}
                     <div class="flex justify-between">
-                        <span class="text-gray-400">Distance ({{ workout.distance|round(2) }} km):</span>
-                        <span class="text-gray-200">+{{ (workout.distance * 30)|int }} XP</span>
+                        <span class="text-gray-400">Distance ({{ workout.distance|default(0)|round(2) }} km):</span>
+                        <span class="text-gray-200">+{{ (workout.distance|default(0) * 30)|int }} XP</span>
                     </div>
                     {% endif %}
                     
@@ -111,12 +111,12 @@
                     
                     <div class="flex justify-between">
                         <span class="text-gray-400">Duration multiplier:</span>
-                        <span class="text-gray-200">×{{ min(3, max(1, workout.duration / 30))|round(2) }}</span>
+                        <span class="text-gray-200">×{{ (min(3, max(1, (workout.duration or 0) / 30)))|round(2) }}</span>
                     </div>
                     
                     <div class="flex justify-between">
                         <span class="text-gray-400">Intensity multiplier:</span>
-                        <span class="text-gray-200">×{{ (1 + (workout.intensity / 10))|round(2) }}</span>
+                        <span class="text-gray-200">×{{ (1 + ((workout.intensity or 0) / 10))|round(2) }}</span>
                     </div>
                     
                     <div class="border-t border-gray-700 pt-2 mt-2 flex justify-between font-semibold">

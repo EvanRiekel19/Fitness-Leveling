@@ -269,7 +269,7 @@ def view(workout_id):
         exercises = []
         
         try:
-            # Query exercises directly using the imported Exercise model
+            # Query exercises directly
             exercises_data = Exercise.query.filter_by(workout_id=workout_id).all()
             
             for exercise in exercises_data:
@@ -284,6 +284,7 @@ def view(workout_id):
             # Don't throw error for exercise issues
             print(f"Error retrieving exercises: {e}")
             
+        # Render template
         return render_template('workout/view.html', workout=workout, exercises=exercises)
     except Exception as e:
         import traceback
