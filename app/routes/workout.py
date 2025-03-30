@@ -272,48 +272,54 @@ def view(workout_id):
         # Only try to get exercises if this is a strength workout
         if workout.type == 'strength':
             try:
-                # Query exercises directly using raw SQL for more reliability
-                exercise_rows = db.session.execute(f"SELECT * FROM exercise WHERE workout_id = {workout_id}").fetchall()
-                print(f"Found {len(exercise_rows)} exercises using raw SQL")
+                # Log for debugging
+                print(f"DEBUG: Retrieving exercises for workout {workout_id}")
                 
+                # Get all exercises using direct SQL (better reliability)
+                exercise_query = "SELECT id, workout_id, name FROM exercise WHERE workout_id = :workout_id"
+                exercise_rows = db.session.execute(exercise_query, {'workout_id': workout_id}).fetchall()
+                print(f"DEBUG: Found {len(exercise_rows)} exercises using SQL")
+                
+                # Process each exercise
                 for exercise_row in exercise_rows:
-                    exercise_id = exercise_row[0]  # Assuming id is the first column
-                    exercise_name = exercise_row[2]  # Assuming name is the third column
+                    exercise_id = exercise_row[0]
+                    exercise_name = exercise_row[2]
                     
-                    print(f"Processing exercise: {exercise_id} - {exercise_name}")
+                    print(f"DEBUG: Processing exercise: {exercise_id} - {exercise_name}")
                     
-                    # Get exercise model to maintain compatibility
-                    exercise = Exercise.query.get(exercise_id)
+                    # Create a basic exercise object
+                    exercise = Exercise(
+                        id=exercise_id,
+                        workout_id=workout_id,
+                        name=exercise_name
+                    )
                     
-                    if not exercise:
-                        print(f"  Warning: Could not find exercise with id {exercise_id} in ORM")
-                        continue
-                        
-                    # Get sets using raw SQL for more reliability
-                    set_rows = db.session.execute(f"SELECT * FROM exercise_set WHERE exercise_id = {exercise_id} ORDER BY set_number").fetchall()
-                    print(f"  Found {len(set_rows)} sets for exercise {exercise_name} using raw SQL")
+                    # Get all sets for this exercise using direct SQL
+                    set_query = """
+                        SELECT id, exercise_id, set_number, reps, weight, notes 
+                        FROM exercise_set 
+                        WHERE exercise_id = :exercise_id 
+                        ORDER BY set_number
+                    """
+                    set_rows = db.session.execute(set_query, {'exercise_id': exercise_id}).fetchall()
+                    print(f"DEBUG: Found {len(set_rows)} sets for exercise {exercise_name}")
                     
                     # Map raw SQL rows to ExerciseSet objects
                     sets = []
                     for set_row in set_rows:
-                        set_id = set_row[0]  # Assuming id is the first column
-                        set_obj = ExerciseSet.query.get(set_id)
-                        
-                        if set_obj:
-                            sets.append(set_obj)
-                        else:
-                            # Create a temporary object if needed
-                            print(f"  Warning: Could not find set with id {set_id} in ORM")
-                            temp_set = ExerciseSet(
-                                id=set_row[0],
-                                exercise_id=set_row[1],
-                                set_number=set_row[2],
-                                reps=set_row[3],
-                                weight=set_row[4],
-                                notes=set_row[5] if len(set_row) > 5 else ""
-                            )
-                            sets.append(temp_set)
+                        # Create exercise set objects directly from SQL data
+                        set_obj = ExerciseSet(
+                            id=set_row[0],
+                            exercise_id=set_row[1],
+                            set_number=set_row[2], 
+                            reps=set_row[3],
+                            weight=set_row[4],
+                            notes=set_row[5] if len(set_row) > 5 and set_row[5] is not None else ""
+                        )
+                        sets.append(set_obj)
+                        print(f"DEBUG: Added set {set_obj.set_number}: {set_obj.reps} reps at {set_obj.weight}kg")
                     
+                    # Add this exercise and its sets to our collection
                     exercises.append({
                         'model': exercise,
                         'ordered_sets': sets
@@ -321,7 +327,7 @@ def view(workout_id):
             except Exception as e:
                 # Just log the error, don't crash
                 import traceback
-                print(f"Error getting exercises: {e}")
+                print(f"ERROR getting exercises: {e}")
                 print(traceback.format_exc())
         
         # Basic template render with workout data
@@ -332,7 +338,7 @@ def view(workout_id):
     except Exception as e:
         # Log the error but return a user-friendly message
         import traceback
-        print(f"Error viewing workout {workout_id}: {e}")
+        print(f"ERROR viewing workout {workout_id}: {e}")
         print(traceback.format_exc())
         flash(f"Error loading workout. Please try again.", "error")
         return redirect(url_for('workout.index'))
