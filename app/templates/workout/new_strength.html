@@ -639,46 +639,50 @@
     // Function to update previous workout info
     function updatePreviousWorkout() {
         const workoutType = document.getElementById('subtype').value;
+        const history = workoutHistory[workoutType];
         
-        // Make an AJAX request to get the previous workout
-        fetch(`/api/workouts/last/${workoutType}`)
-            .then(response => response.json())
-            .then(data => {
-                const noPrevWorkout = document.getElementById('no-previous-workout');
-                const prevWorkoutDetails = document.getElementById('previous-workout-details');
-                
-                if (!data || !data.last_workout) {
-                    noPrevWorkout.classList.remove('hidden');
-                    prevWorkoutDetails.classList.add('hidden');
-                    return;
-                }
-                
-                const workout = data.last_workout;
-                
-                // Update the workout details
-                document.getElementById('prev-workout-date').textContent = formatDate(workout.date);
-                document.getElementById('prev-workout-duration').textContent = `${workout.duration} min`;
-                document.getElementById('prev-workout-intensity').textContent = `${workout.intensity}/10`;
-                
-                // Update exercises
-                const exercisesList = document.getElementById('prev-workout-exercises');
-                exercisesList.innerHTML = '';
-                
-                workout.exercises.forEach(exercise => {
-                    const li = document.createElement('li');
-                    li.className = 'text-gray-200';
-                    li.textContent = `${exercise.name} - ${exercise.total_sets} sets`;
-                    exercisesList.appendChild(li);
-                });
-                
-                noPrevWorkout.classList.add('hidden');
-                prevWorkoutDetails.classList.remove('hidden');
-            })
-            .catch(error => {
-                console.error('Error fetching previous workout:', error);
-                document.getElementById('no-previous-workout').classList.remove('hidden');
-                document.getElementById('previous-workout-details').classList.add('hidden');
-            });
+        const noPrevWorkout = document.getElementById('no-previous-workout');
+        const prevWorkoutDetails = document.getElementById('previous-workout-details');
+        
+        if (!history || !history.last_workout) {
+            noPrevWorkout.classList.remove('hidden');
+            prevWorkoutDetails.classList.add('hidden');
+            return;
+        }
+        
+        const workout = history.last_workout;
+        
+        // Update the workout details
+        document.getElementById('prev-workout-date').textContent = formatDate(workout.date);
+        document.getElementById('prev-workout-duration').textContent = `${workout.duration} min`;
+        document.getElementById('prev-workout-intensity').textContent = `${workout.intensity}/10`;
+        
+        // Update exercises
+        const exercisesList = document.getElementById('prev-workout-exercises');
+        exercisesList.innerHTML = '';
+        
+        workout.exercises.forEach(exercise => {
+            const li = document.createElement('li');
+            li.className = 'text-gray-200';
+            li.textContent = `${exercise.name} - ${exercise.total_sets} sets`;
+            if (exercise.max_weight) {
+                li.textContent += ` (max ${exercise.max_weight}kg × ${exercise.max_reps})`;
+            }
+            exercisesList.appendChild(li);
+        });
+        
+        noPrevWorkout.classList.add('hidden');
+        prevWorkoutDetails.classList.remove('hidden');
     }
+    
+    // Add event listener for workout type change
+    document.getElementById('subtype').addEventListener('change', function() {
+        updatePreviousWorkout();
+    });
+    
+    // Call on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePreviousWorkout();
+    });
 </script>
 {% endblock %} 
