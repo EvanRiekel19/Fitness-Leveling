@@ -90,8 +90,25 @@ def get_exercise_history(exercise_name, user_id):
 def get_workout_history(workout_type, user_id):
     """Get previous workout data and PRs for a specific workout type."""
     try:
-        print(f"DEBUG: Getting workout history for type: {workout_type}")
+        print(f"\nDEBUG: Getting workout history for type: {workout_type}")
         # Get the last 5 workouts of this type, handling both old and new format
+        name_pattern = '%' + workout_type.replace('strength_', '').replace('_', ' ') + '%'
+        print(f"DEBUG: Using name pattern: {name_pattern}")
+        
+        # First, let's see what workouts exist
+        all_workouts = db.session.execute("""
+            SELECT id, name, subtype, type
+            FROM workout
+            WHERE user_id = :user_id
+            ORDER BY date DESC
+            LIMIT 10
+        """, {'user_id': user_id}).fetchall()
+        
+        print("\nDEBUG: Recent workouts in system:")
+        for w in all_workouts:
+            print(f"ID: {w[0]}, Name: {w[1]}, Subtype: {w[2]}, Type: {w[3]}")
+        
+        # Now get the matching workouts
         workouts = db.session.execute("""
             SELECT id, name, duration, intensity, date, notes
             FROM workout
@@ -105,12 +122,15 @@ def get_workout_history(workout_type, user_id):
         """, {
             'workout_type': workout_type, 
             'user_id': user_id,
-            'name_pattern': '%' + workout_type.replace('strength_', '').replace('_', ' ') + '%'
+            'name_pattern': name_pattern
         }).fetchall()
         
-        print(f"DEBUG: Found {len(workouts) if workouts else 0} workouts")
+        print(f"\nDEBUG: Found {len(workouts) if workouts else 0} matching workouts")
+        for w in (workouts or []):
+            print(f"Matching workout - ID: {w[0]}, Name: {w[1]}, Date: {w[4]}")
         
         if not workouts:
+            print("DEBUG: No matching workouts found")
             return None
             
         history = []

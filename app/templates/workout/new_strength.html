@@ -639,22 +639,28 @@
     // Function to update previous workout info
     function updatePreviousWorkout() {
         const workoutType = document.getElementById('subtype').value;
-        console.log('Updating previous workout for type:', workoutType);
-        console.log('Available history:', workoutHistory);
+        console.log('\nDEBUG: Updating previous workout display');
+        console.log('Workout type selected:', workoutType);
+        console.log('Available workout history:', JSON.stringify(workoutHistory, null, 2));
         
         const history = workoutHistory[workoutType];
+        console.log('History found for this type:', history ? 'yes' : 'no');
+        if (history) {
+            console.log('Last workout:', history.last_workout);
+        }
+        
         const noPrevWorkout = document.getElementById('no-previous-workout');
         const prevWorkoutDetails = document.getElementById('previous-workout-details');
         
         if (!history || !history.last_workout) {
-            console.log('No history found for type:', workoutType);
+            console.log('No history or last workout found - showing "no previous workout" message');
             noPrevWorkout.classList.remove('hidden');
             prevWorkoutDetails.classList.add('hidden');
             return;
         }
         
-        console.log('Found history:', history);
         const workout = history.last_workout;
+        console.log('Displaying workout:', workout);
         
         // Update the workout details
         document.getElementById('prev-workout-date').textContent = formatDate(workout.date);
@@ -666,6 +672,7 @@
         exercisesList.innerHTML = '';
         
         workout.exercises.forEach(exercise => {
+            console.log('Adding exercise to display:', exercise);
             const li = document.createElement('li');
             li.className = 'text-gray-200';
             li.textContent = `${exercise.name} - ${exercise.total_sets} sets`;
@@ -677,6 +684,7 @@
         
         noPrevWorkout.classList.add('hidden');
         prevWorkoutDetails.classList.remove('hidden');
+        console.log('Previous workout display updated successfully');
     }
     
     // Add event listener for workout type change
