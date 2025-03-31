@@ -3,133 +3,139 @@
 {% block title %}Detailed Strength Workout - Fitness Leveling{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
-    <div class="bg-dark-surface rounded-xl shadow-sm p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-100">Log Workout</h1>
-        </div>
-        
-        <form id="strength-workout-form" method="POST" class="space-y-6">
-            <!-- Basic Workout Information -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-300">Workout Name</label>
-                    <input type="text" id="name" name="name" required
-                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
-                        placeholder="e.g., Upper Body Day, Leg Day">
+<div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Form Section -->
+        <div class="lg:col-span-2">
+            <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-gray-100">Log Workout</h1>
                 </div>
-                <div>
-                    <label for="duration" class="block text-sm font-medium text-gray-300">Duration (minutes)</label>
-                    <input type="number" id="duration" name="duration" required min="1"
-                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="subtype" class="block text-sm font-medium text-gray-300">Workout Type</label>
-                    <select id="subtype" name="subtype" 
-                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
-                        <option value="strength_upper">Upper Body</option>
-                        <option value="strength_lower">Lower Body</option>
-                        <option value="strength_push">Push Workout</option>
-                        <option value="strength_pull">Pull Workout</option>
-                        <option value="strength_full" selected>Full Body</option>
-                        <option value="strength_other">Other Strength</option>
-                    </select>
-                    
-                    <!-- Previous Workout Info -->
-                    <div id="previous-workout-info" class="mt-4 p-3 bg-dark-surface rounded-lg border border-gray-700">
-                        <h3 class="text-sm font-medium text-gray-300 mb-2">Previous Workout</h3>
-                        <div id="no-previous-workout" class="hidden mt-4 text-gray-400">
-                            No previous workout found for this type
+                
+                <form id="strength-workout-form" method="POST" class="space-y-6">
+                    <!-- Basic Workout Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-300">Workout Name</label>
+                            <input type="text" id="name" name="name" required
+                                class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
+                                placeholder="e.g., Upper Body Day, Leg Day">
                         </div>
-                        <div id="previous-workout-details" class="hidden mt-4">
-                            <h3 class="text-lg font-semibold mb-2">Previous Workout</h3>
-                            <div class="bg-gray-800 rounded p-4">
-                                <div class="grid grid-cols-3 gap-4 mb-4">
-                                    <div>
-                                        <span class="text-gray-400">Date:</span>
-                                        <span id="prev-workout-date" class="text-gray-200 ml-2"></span>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-400">Duration:</span>
-                                        <span id="prev-workout-duration" class="text-gray-200 ml-2"></span>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-400">Intensity:</span>
-                                        <span id="prev-workout-intensity" class="text-gray-200 ml-2"></span>
-                                    </div>
-                                </div>
-                                <div class="mt-4">
-                                    <h4 class="text-gray-400 mb-2">Exercises:</h4>
-                                    <div id="prev-workout-exercises" class="space-y-4">
-                                        <!-- Exercise details will be populated here -->
-                                    </div>
-                                </div>
+                        <div>
+                            <label for="duration" class="block text-sm font-medium text-gray-300">Duration (minutes)</label>
+                            <input type="number" id="duration" name="duration" required min="1"
+                                class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="subtype" class="block text-sm font-medium text-gray-300">Workout Type</label>
+                            <select id="subtype" name="subtype" 
+                                class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
+                                <option value="strength_upper">Upper Body</option>
+                                <option value="strength_lower">Lower Body</option>
+                                <option value="strength_push">Push Workout</option>
+                                <option value="strength_pull">Pull Workout</option>
+                                <option value="strength_full" selected>Full Body</option>
+                                <option value="strength_other">Other Strength</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="intensity" class="block text-sm font-medium text-gray-300">Overall Intensity (1-10)</label>
+                            <input type="range" id="intensity" name="intensity" min="1" max="10" value="5"
+                                class="mt-1 block w-full bg-dark-hover accent-blue-500"
+                                oninput="document.getElementById('intensity-value').textContent = this.value">
+                            <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                <span>Easy (1)</span>
+                                <span id="intensity-value">5</span>
+                                <span>Max Effort (10)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exercises Section -->
+                    <div class="border-t border-gray-700 pt-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-medium text-gray-100">Exercises</h2>
+                            <button type="button" id="add-exercise-btn"
+                                class="inline-flex items-center px-3 h-8 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Add Exercise
+                            </button>
+                        </div>
+                        
+                        <div id="exercises-container" class="space-y-6">
+                            <!-- Exercise cards will be added here dynamically -->
+                            <div class="text-center py-10 text-gray-400 italic text-sm" id="no-exercises-message">
+                                No exercises added yet. Click "Add Exercise" to start building your workout.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-300">Workout Notes</label>
+                        <textarea id="notes" name="notes" rows="3"
+                            class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
+                            placeholder="How did it feel? Any achievements or personal records?"></textarea>
+                    </div>
+
+                    <!-- Hidden field to store exercise data as JSON -->
+                    <input type="hidden" id="exercises-data" name="exercises_data" value="[]">
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end space-x-4">
+                        <a href="{{ url_for('workout.index') }}"
+                            class="inline-flex items-center justify-center px-4 h-10 border border-gray-700 text-sm font-medium rounded-lg text-gray-300 bg-dark-hover hover:bg-dark-surface transition-colors">
+                            Cancel
+                        </a>
+                        <button type="submit" id="submit-btn"
+                            class="inline-flex items-center justify-center px-4 h-10 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                            disabled>
+                            Log Workout
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Previous Workout Section (Sidebar) -->
+        <div class="lg:col-span-1">
+            <div class="bg-dark-surface rounded-xl shadow-sm p-6 sticky top-6">
+                <div id="no-previous-workout" class="hidden mt-4 text-gray-400">
+                    No previous workout found for this type
+                </div>
+                <div id="previous-workout-details" class="hidden">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-100">Previous Workout</h3>
+                    <div class="bg-gray-800/50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <span class="text-gray-400">Date:</span>
+                                <span id="prev-workout-date" class="text-gray-200 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Duration:</span>
+                                <span id="prev-workout-duration" class="text-gray-200 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Intensity:</span>
+                                <span id="prev-workout-intensity" class="text-gray-200 ml-2"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-gray-300 font-medium mb-2">Exercises:</h4>
+                            <div id="prev-workout-exercises" class="space-y-3">
+                                <!-- Exercise details will be populated here -->
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div>
-                    <label for="intensity" class="block text-sm font-medium text-gray-300">Overall Intensity (1-10)</label>
-                    <input type="range" id="intensity" name="intensity" min="1" max="10" value="5"
-                        class="mt-1 block w-full bg-dark-hover accent-blue-500"
-                        oninput="document.getElementById('intensity-value').textContent = this.value">
-                    <div class="flex justify-between text-xs text-gray-400 mt-1">
-                        <span>Easy (1)</span>
-                        <span id="intensity-value">5</span>
-                        <span>Max Effort (10)</span>
-                    </div>
-                </div>
             </div>
-
-            <!-- Exercises Section -->
-            <div class="border-t border-gray-700 pt-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-medium text-gray-100">Exercises</h2>
-                    <button type="button" id="add-exercise-btn"
-                        class="inline-flex items-center px-3 h-8 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Add Exercise
-                    </button>
-                </div>
-                
-                <div id="exercises-container" class="space-y-6">
-                    <!-- Exercise cards will be added here dynamically -->
-                    <div class="text-center py-10 text-gray-400 italic text-sm" id="no-exercises-message">
-                        No exercises added yet. Click "Add Exercise" to start building your workout.
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notes -->
-            <div>
-                <label for="notes" class="block text-sm font-medium text-gray-300">Workout Notes</label>
-                <textarea id="notes" name="notes" rows="3"
-                    class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
-                    placeholder="How did it feel? Any achievements or personal records?"></textarea>
-            </div>
-
-            <!-- Hidden field to store exercise data as JSON -->
-            <input type="hidden" id="exercises-data" name="exercises_data" value="[]">
-
-            <!-- Submit Button -->
-            <div class="flex justify-end space-x-4">
-                <a href="{{ url_for('workout.index') }}"
-                    class="inline-flex items-center justify-center px-4 h-10 border border-gray-700 text-sm font-medium rounded-lg text-gray-300 bg-dark-hover hover:bg-dark-surface transition-colors">
-                    Cancel
-                </a>
-                <button type="submit" id="submit-btn"
-                    class="inline-flex items-center justify-center px-4 h-10 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                    disabled>
-                    Log Workout
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
