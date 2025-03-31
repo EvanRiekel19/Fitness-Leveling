@@ -149,17 +149,36 @@ def get_workout_history(workout_type, user_id):
         last_workout = workouts[0]
         workout_id = last_workout[0]
         
-        # Get exercises for this workout
+        # Get exercises for this workout with a simpler query first
         exercises = db.session.execute("""
-            SELECT e.id, e.name, COUNT(s.id) as total_sets,
-                   MAX(s.weight) as max_weight,
-                   MAX(CASE WHEN s.weight = MAX(s.weight) OVER (PARTITION BY e.id) THEN s.reps END) as max_reps
+            WITH max_weights AS (
+                SELECT exercise_id, MAX(weight) as max_weight
+                FROM exercise_set
+                GROUP BY exercise_id
+            )
+            SELECT 
+                e.id, 
+                e.name, 
+                COUNT(s.id) as total_sets,
+                mw.max_weight,
+                (
+                    SELECT reps 
+                    FROM exercise_set 
+                    WHERE exercise_id = e.id 
+                    AND weight = mw.max_weight 
+                    LIMIT 1
+                ) as max_reps
             FROM exercise e
             LEFT JOIN exercise_set s ON e.id = s.exercise_id
+            LEFT JOIN max_weights mw ON e.id = mw.exercise_id
             WHERE e.workout_id = :workout_id
-            GROUP BY e.id, e.name
+            GROUP BY e.id, e.name, mw.max_weight
             ORDER BY e.id
         """, {'workout_id': workout_id}).fetchall()
+        
+        print(f"\nDEBUG: Found {len(exercises)} exercises")
+        for ex in exercises:
+            print(f"Exercise: {ex[1]}, Sets: {ex[2]}, Max Weight: {ex[3]}, Max Reps: {ex[4]}")
         
         # Format the response
         return {
