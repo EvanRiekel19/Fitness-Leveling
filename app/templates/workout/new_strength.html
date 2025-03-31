@@ -253,31 +253,105 @@
     // Initialize form
     document.addEventListener('DOMContentLoaded', () => {
         // Set up event listeners
-        addExerciseBtn.addEventListener('click', addExercise);
+        addExerciseBtn.addEventListener('click', () => addExercise());
         document.getElementById('strength-workout-form').addEventListener('submit', prepareFormSubmission);
         workoutTypeSelect.addEventListener('change', updateWorkoutHistory);
         
         // Load initial exercises if editing
         if (initialExercises && initialExercises.length > 0) {
+            // Hide the "no exercises" message
+            noExercisesMessage.style.display = 'none';
+            
             initialExercises.forEach(exerciseData => {
-                const exerciseCard = addExercise();
+                // Create a new exercise card
+                exerciseCounter++;
+                const exerciseId = exerciseCounter;
+                
+                // Clone template and replace placeholders
+                const exerciseHTML = exerciseTemplate.innerHTML.replace(/%EXERCISE_ID%/g, exerciseId);
+                
+                // Create container and add HTML
+                const exerciseElement = document.createElement('div');
+                exerciseElement.innerHTML = exerciseHTML;
+                exerciseElement.dataset.exerciseId = exerciseId;
+                exerciseElement.className = 'exercise-card-container';
+                
+                // Add exercise to DOM
+                exercisesContainer.appendChild(exerciseElement);
+                
+                // Set up the exercise card
+                const exerciseCard = exerciseElement.querySelector('.exercise-card');
+                const removeExerciseBtn = exerciseCard.querySelector('.remove-exercise-btn');
+                const addSetBtn = exerciseCard.querySelector('.add-set-btn');
                 const exerciseNameInput = exerciseCard.querySelector('.exercise-name');
+                const setsTableBody = exerciseCard.querySelector('.sets-table-body');
+                const noSetsMessage = exerciseCard.querySelector('.no-sets-message');
+                
+                // Set exercise name
                 exerciseNameInput.value = exerciseData.name;
+                
+                // Add event listeners
+                removeExerciseBtn.addEventListener('click', () => removeExercise(exerciseId));
+                addSetBtn.addEventListener('click', () => addSet(exerciseId));
+                exerciseNameInput.addEventListener('change', () => {
+                    updateExerciseHistory(exerciseCard, exerciseNameInput.value);
+                    updateExercisesData();
+                });
+                
+                // Hide "no sets" message if there are sets
+                if (exerciseData.sets && exerciseData.sets.length > 0) {
+                    noSetsMessage.style.display = 'none';
+                }
                 
                 // Add sets
                 exerciseData.sets.forEach(setData => {
-                    const setRow = addSet(exerciseCard);
+                    // Clone template and replace placeholders
+                    const setRowHTML = setRowTemplate.innerHTML.replace(/%SET_NUMBER%/g, setData.set_number);
+                    
+                    // Create row and add HTML
+                    const setRow = document.createElement('tr');
+                    setRow.innerHTML = setRowHTML;
+                    setRow.classList.add('set-row');
+                    setRow.dataset.setNumber = setData.set_number;
+                    
+                    // Set values
+                    setRow.querySelector('.set-weight').value = setData.weight || '';
+                    setRow.querySelector('.set-reps').value = setData.reps || '';
+                    setRow.querySelector('.set-notes').value = setData.notes || '';
+                    
+                    // Add event listeners
+                    const removeSetBtn = setRow.querySelector('.remove-set-btn');
                     const weightInput = setRow.querySelector('.set-weight');
                     const repsInput = setRow.querySelector('.set-reps');
                     const notesInput = setRow.querySelector('.set-notes');
                     
-                    weightInput.value = setData.weight || '';
-                    repsInput.value = setData.reps || '';
-                    notesInput.value = setData.notes || '';
+                    removeSetBtn.addEventListener('click', () => removeSet(exerciseId, setData.set_number));
+                    weightInput.addEventListener('change', updateExercisesData);
+                    repsInput.addEventListener('change', updateExercisesData);
+                    notesInput.addEventListener('change', updateExercisesData);
+                    
+                    // Add to DOM
+                    setsTableBody.appendChild(setRow);
                 });
+                
+                // Add to data structure
+                exercisesData.push({
+                    id: exerciseId,
+                    name: exerciseData.name,
+                    sets: exerciseData.sets.map(set => ({
+                        setNumber: set.set_number,
+                        weight: set.weight || '',
+                        reps: set.reps || '',
+                        notes: set.notes || ''
+                    }))
+                });
+                
+                // Update exercise history
+                updateExerciseHistory(exerciseCard, exerciseData.name);
             });
             
-            updateExerciseData();
+            updateExercisesData();
+            updateSubmitButtonState();
         }
         
         // Initialize UI state
@@ -411,6 +485,7 @@
         }
         
         historyDiv.innerHTML = html;
+        updateExercisesData();
     }
     
     // Function to create a new exercise card
@@ -425,6 +500,7 @@
         const exerciseNameInput = exerciseCard.querySelector('.exercise-name');
         exerciseNameInput.addEventListener('change', function() {
             updateExerciseHistory(this.closest('.exercise-card'), this.value);
+            updateExercisesData();
         });
         
         // Add remove button listener
@@ -467,7 +543,10 @@
         
         removeExerciseBtn.addEventListener('click', () => removeExercise(exerciseId));
         addSetBtn.addEventListener('click', () => addSet(exerciseId));
-        exerciseNameInput.addEventListener('change', updateExercisesData);
+        exerciseNameInput.addEventListener('change', () => {
+            updateExerciseHistory(exerciseCard, exerciseNameInput.value);
+            updateExercisesData();
+        });
         
         // Add first set automatically
         addSet(exerciseId);
@@ -481,6 +560,9 @@
         
         updateExercisesData();
         updateSubmitButtonState();
+        
+        // Return the exercise card for chaining
+        return exerciseCard;
     }
     
     // Remove an exercise card
