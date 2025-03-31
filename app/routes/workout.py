@@ -385,17 +385,17 @@ def view(workout_id):
                     
                     # Get all sets for this exercise using parameterized query
                     sets_sql = """
-                        SELECT id, exercise_id, set_number, reps, weight, notes
-                        FROM exercise_set
-                        WHERE exercise_id = :exercise_id
-                        ORDER BY set_number
+                        SELECT es.id, es.exercise_id, es.set_number, es.reps, es.weight, es.notes
+                        FROM exercise_set es
+                        WHERE es.exercise_id = :exercise_id
+                        ORDER BY es.set_number ASC
                     """
                     sets_result = db.session.execute(sets_sql, {"exercise_id": ex_id})
                     set_rows = sets_result.fetchall()
                     
                     print(f"DEBUG: Found {len(set_rows)} sets")
                     
-                    # Create exercise object
+                    # Create exercise object with explicit ordering
                     exercise = {
                         'model': {
                             'id': ex_id,
@@ -404,18 +404,25 @@ def view(workout_id):
                         'ordered_sets': []
                     }
                     
-                    # Add all sets to this exercise
+                    # Add all sets to this exercise with explicit set number handling
                     for set_row in set_rows:
+                        set_number = set_row[2]  # Get the set number from the database
                         # Create a set dictionary
                         exercise_set = {
                             'id': set_row[0],
-                            'set_number': set_row[2],
+                            'set_number': set_number,
                             'reps': set_row[3],
                             'weight': set_row[4],
                             'notes': set_row[5] if set_row[5] else ''
                         }
-                        exercise['ordered_sets'].append(exercise_set)
-                        print(f"DEBUG: Added set {exercise_set['set_number']}: {exercise_set['reps']} reps at {exercise_set['weight']}kg")
+                        # Ensure we have the right index in the list
+                        while len(exercise['ordered_sets']) < set_number:
+                            exercise['ordered_sets'].append(None)
+                        exercise['ordered_sets'][set_number - 1] = exercise_set
+                        print(f"DEBUG: Added set {set_number}: {exercise_set['reps']} reps at {exercise_set['weight']}kg")
+                    
+                    # Remove any None values from the list
+                    exercise['ordered_sets'] = [s for s in exercise['ordered_sets'] if s is not None]
                     
                     # Add this exercise to our list
                     exercises.append(exercise)

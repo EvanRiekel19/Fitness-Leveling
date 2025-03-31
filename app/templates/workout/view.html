@@ -111,16 +111,16 @@
                             <thead class="text-xs text-gray-400">
                                 <tr>
                                     <th class="p-2">Set</th>
-                                    <th class="p-2">Weight</th>
+                                    <th class="p-2">Weight (kg)</th>
                                     <th class="p-2">Reps</th>
                                     <th class="p-2">Notes</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for set in exercise_data.ordered_sets %}
+                                {% for set in exercise_data.ordered_sets|sort(attribute='set_number') %}
                                 <tr class="border-t border-gray-800">
                                     <td class="p-2">{{ set.set_number }}</td>
-                                    <td class="p-2">{{ set.weight|float|round(1) if set.weight else '--' }}</td>
+                                    <td class="p-2">{{ "%.1f"|format(set.weight) if set.weight else '--' }}</td>
                                     <td class="p-2">{{ set.reps if set.reps else '--' }}</td>
                                     <td class="p-2 text-gray-400">{{ set.notes if set.notes else '' }}</td>
                                 </tr>
