@@ -28,7 +28,7 @@ class Challenge(db.Model):
         """Calculate a user's progress towards the challenge goal."""
         participant = self.get_participant(user_id)
         if not participant:
-            return 0
+            return {'progress': 0, 'current_value': 0}
 
         # Get relevant workouts within the challenge timeframe
         workouts = Workout.query.filter(
@@ -48,7 +48,18 @@ class Challenge(db.Model):
                 total += 1
             # Add more goal types as needed
 
-        return (total / self.goal_value) * 100 if self.goal_value > 0 else 0
+        progress = (total / self.goal_value) * 100 if self.goal_value > 0 else 0
+        
+        # Update completion status
+        if progress >= 100 and not participant.completed:
+            participant.completed = True
+            participant.completed_at = datetime.utcnow()
+            db.session.commit()
+        
+        return {
+            'progress': progress,
+            'current_value': total
+        }
 
 class ChallengeParticipant(db.Model):
     id = db.Column(db.Integer, primary_key=True)

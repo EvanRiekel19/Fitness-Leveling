@@ -67,11 +67,27 @@ def view(challenge_id):
     # Calculate progress for each participant
     participant_progress = []
     for participant in participants:
-        progress = challenge.calculate_progress(participant.user_id)
+        progress_data = challenge.calculate_progress(participant.user_id)
+        # Get workout count for this participant in the challenge period
+        workout_count = db.session.execute("""
+            SELECT COUNT(*) 
+            FROM workout 
+            WHERE user_id = :user_id 
+            AND type = :workout_type
+            AND created_at BETWEEN :start_date AND :end_date
+        """, {
+            'user_id': participant.user_id,
+            'workout_type': challenge.workout_type,
+            'start_date': challenge.start_date,
+            'end_date': challenge.end_date
+        }).scalar()
+        
         participant_progress.append({
             'user': participant.user,
-            'progress': progress,
-            'completed': participant.completed
+            'progress': progress_data['progress'],
+            'current_value': progress_data['current_value'],
+            'completed': participant.completed,
+            'workout_count': workout_count
         })
     
     # Sort by progress descending
