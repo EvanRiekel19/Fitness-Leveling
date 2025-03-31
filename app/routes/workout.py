@@ -198,19 +198,12 @@ def new_strength():
             workout = Workout(
                 user_id=current_user.id,
                 type='strength',
+                subtype=subtype,  # Set subtype directly
                 name=request.form.get('name', ''),
                 duration=safe_int(request.form.get('duration')),
                 intensity=safe_int(request.form.get('intensity'), 5),
                 notes=request.form.get('notes', '')
             )
-            
-            # Add subtype if the column exists
-            try:
-                if hasattr(workout, 'subtype'):
-                    workout.subtype = subtype
-                    print(f"DEBUG STRENGTH: Set workout subtype to: {subtype}")
-            except Exception as e:
-                print(f"DEBUG STRENGTH: Failed to set subtype: {e}")
             
             # Validate required fields
             if not workout.name:
