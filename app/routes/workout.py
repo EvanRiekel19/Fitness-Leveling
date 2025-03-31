@@ -546,6 +546,7 @@ def edit(id):
             workout.duration = safe_int(request.form.get('duration'), workout.duration)
             workout.intensity = safe_int(request.form.get('intensity'), workout.intensity)
             workout.notes = request.form.get('notes', workout.notes)
+            workout.subtype = request.form.get('subtype', workout.subtype)
             
             # Process exercises data from form
             try:
@@ -611,7 +612,15 @@ def edit(id):
     # Convert exercises to JSON for the form
     exercises_json = json.dumps(exercises)
     
+    # Get exercise history for this user
+    exercise_history = get_exercise_history(current_user.id)
+    
+    # Get workout history for this user
+    workout_history = get_workout_history(current_user.id)
+    
     return render_template('workout/new_strength.html', 
                          workout=workout,
                          exercise_options=get_exercise_options(),
-                         initial_exercises=exercises_json)
+                         initial_exercises=exercises_json,
+                         exercise_history=exercise_history,
+                         workout_history=workout_history)
