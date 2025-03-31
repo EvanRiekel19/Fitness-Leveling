@@ -40,6 +40,7 @@ def create_app(test_config=None):
     from app.models.user import User
     from app.models.workout import Workout
     from app.models.exercise import Exercise, ExerciseSet
+    from app.models.challenge import Challenge, ChallengeParticipant
     
     # Set up user loader
     @login_manager.user_loader
@@ -66,6 +67,14 @@ def create_app(test_config=None):
                 if 'exercise_set' not in tables:
                     ExerciseSet.__table__.create(db.engine)
                     app.logger.info("Created ExerciseSet table")
+                
+                if 'challenge' not in tables:
+                    Challenge.__table__.create(db.engine)
+                    app.logger.info("Created Challenge table")
+                
+                if 'challenge_participant' not in tables:
+                    ChallengeParticipant.__table__.create(db.engine)
+                    app.logger.info("Created ChallengeParticipant table")
                 
                 # Check if we need to add the subtype column to the workout table
                 workout_columns = [c['name'] for c in inspector.get_columns('workout')]
