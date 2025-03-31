@@ -149,36 +149,27 @@ def get_workout_history(workout_type, user_id):
         last_workout = workouts[0]
         workout_id = last_workout[0]
         
-        # Get exercises for this workout with a simpler query first
+        # Get exercises and their sets for this workout
         exercises = db.session.execute("""
-            WITH max_weights AS (
-                SELECT exercise_id, MAX(weight) as max_weight
-                FROM exercise_set
-                GROUP BY exercise_id
-            )
             SELECT 
                 e.id, 
-                e.name, 
-                COUNT(s.id) as total_sets,
-                mw.max_weight,
-                (
-                    SELECT reps 
-                    FROM exercise_set 
-                    WHERE exercise_id = e.id 
-                    AND weight = mw.max_weight 
-                    LIMIT 1
-                ) as max_reps
+                e.name,
+                array_agg(s.set_number ORDER BY s.set_number) as set_numbers,
+                array_agg(s.reps ORDER BY s.set_number) as reps,
+                array_agg(s.weight ORDER BY s.set_number) as weights,
+                array_agg(s.notes ORDER BY s.set_number) as notes
             FROM exercise e
             LEFT JOIN exercise_set s ON e.id = s.exercise_id
-            LEFT JOIN max_weights mw ON e.id = mw.exercise_id
             WHERE e.workout_id = :workout_id
-            GROUP BY e.id, e.name, mw.max_weight
+            GROUP BY e.id, e.name
             ORDER BY e.id
         """, {'workout_id': workout_id}).fetchall()
         
         print(f"\nDEBUG: Found {len(exercises)} exercises")
         for ex in exercises:
-            print(f"Exercise: {ex[1]}, Sets: {ex[2]}, Max Weight: {ex[3]}, Max Reps: {ex[4]}")
+            print(f"Exercise: {ex[1]}")
+            for i in range(len(ex[2])):
+                print(f"  Set {ex[2][i]}: {ex[3][i]} reps at {ex[4][i]}kg")
         
         # Format the response
         return {
@@ -191,9 +182,12 @@ def get_workout_history(workout_type, user_id):
                 'notes': last_workout[5],
                 'exercises': [{
                     'name': ex[1],
-                    'total_sets': ex[2],
-                    'max_weight': ex[3],
-                    'max_reps': ex[4]
+                    'sets': [{
+                        'set_number': set_num,
+                        'reps': reps,
+                        'weight': weight,
+                        'notes': note
+                    } for set_num, reps, weight, note in zip(ex[2], ex[3], ex[4], ex[5])]
                 } for ex in exercises]
             }
         }

@@ -41,28 +41,32 @@
                     <!-- Previous Workout Info -->
                     <div id="previous-workout-info" class="mt-4 p-3 bg-dark-surface rounded-lg border border-gray-700">
                         <h3 class="text-sm font-medium text-gray-300 mb-2">Previous Workout</h3>
-                        <div id="no-previous-workout" class="text-xs text-gray-400 italic">
-                            No previous workouts of this type
+                        <div id="no-previous-workout" class="hidden mt-4 text-gray-400">
+                            No previous workout found for this type
                         </div>
-                        <div id="previous-workout-details" class="hidden">
-                            <div class="grid grid-cols-2 gap-2 text-xs mb-2">
-                                <div>
-                                    <span class="text-gray-400">Date:</span>
-                                    <span class="text-gray-200" id="prev-workout-date"></span>
+                        <div id="previous-workout-details" class="hidden mt-4">
+                            <h3 class="text-lg font-semibold mb-2">Previous Workout</h3>
+                            <div class="bg-gray-800 rounded p-4">
+                                <div class="grid grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <span class="text-gray-400">Date:</span>
+                                        <span id="prev-workout-date" class="text-gray-200 ml-2"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400">Duration:</span>
+                                        <span id="prev-workout-duration" class="text-gray-200 ml-2"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400">Intensity:</span>
+                                        <span id="prev-workout-intensity" class="text-gray-200 ml-2"></span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <span class="text-gray-400">Duration:</span>
-                                    <span class="text-gray-200" id="prev-workout-duration"></span>
+                                <div class="mt-4">
+                                    <h4 class="text-gray-400 mb-2">Exercises:</h4>
+                                    <div id="prev-workout-exercises" class="space-y-4">
+                                        <!-- Exercise details will be populated here -->
+                                    </div>
                                 </div>
-                                <div>
-                                    <span class="text-gray-400">Intensity:</span>
-                                    <span class="text-gray-200" id="prev-workout-intensity"></span>
-                                </div>
-                            </div>
-                            <div class="text-xs">
-                                <div class="text-gray-400 mb-1">Exercises:</div>
-                                <ul class="space-y-1" id="prev-workout-exercises">
-                                </ul>
                             </div>
                         </div>
                     </div>
@@ -673,13 +677,50 @@
         
         workout.exercises.forEach(exercise => {
             console.log('Adding exercise to display:', exercise);
-            const li = document.createElement('li');
-            li.className = 'text-gray-200';
-            li.textContent = `${exercise.name} - ${exercise.total_sets} sets`;
-            if (exercise.max_weight) {
-                li.textContent += ` (max ${exercise.max_weight}kg × ${exercise.max_reps})`;
+            const exerciseDiv = document.createElement('div');
+            exerciseDiv.className = 'bg-gray-700 rounded p-3';
+            
+            // Exercise name header
+            const nameHeader = document.createElement('h5');
+            nameHeader.className = 'text-gray-200 font-semibold mb-2';
+            nameHeader.textContent = exercise.name;
+            exerciseDiv.appendChild(nameHeader);
+            
+            // Create table for sets
+            if (exercise.sets && exercise.sets.length > 0) {
+                const table = document.createElement('table');
+                table.className = 'w-full text-sm';
+                
+                // Table header
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr class="text-gray-400">
+                        <th class="text-left py-1">Set</th>
+                        <th class="text-left py-1">Weight (kg)</th>
+                        <th class="text-left py-1">Reps</th>
+                        <th class="text-left py-1">Notes</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                
+                // Table body
+                const tbody = document.createElement('tbody');
+                exercise.sets.forEach(set => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'text-gray-300';
+                    tr.innerHTML = `
+                        <td class="py-1">${set.set_number}</td>
+                        <td class="py-1">${set.weight || '-'}</td>
+                        <td class="py-1">${set.reps || '-'}</td>
+                        <td class="py-1">${set.notes || ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                exerciseDiv.appendChild(table);
             }
-            exercisesList.appendChild(li);
+            
+            exercisesList.appendChild(exerciseDiv);
         });
         
         noPrevWorkout.classList.add('hidden');
