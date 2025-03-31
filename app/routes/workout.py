@@ -87,6 +87,91 @@ def get_exercise_history(exercise_name, user_id):
         print(f"Error getting exercise history: {e}")
         return None
 
+def get_workout_history(workout_type, user_id):
+    """Get previous workout data and PRs for a specific workout type."""
+    try:
+        # Get the last 5 workouts of this type
+        workouts = db.session.execute("""
+            SELECT id, name, duration, intensity, date, notes
+            FROM workout
+            WHERE user_id = :user_id AND subtype = :workout_type
+            ORDER BY date DESC
+            LIMIT 5
+        """, {'workout_type': workout_type, 'user_id': user_id}).fetchall()
+        
+        if not workouts:
+            return None
+            
+        history = []
+        for workout in workouts:
+            # Get exercises for this workout
+            exercises = db.session.execute("""
+                SELECT e.id, e.name, 
+                       COUNT(DISTINCT es.id) as total_sets,
+                       MAX(es.weight) as max_weight,
+                       MAX(es.reps) as max_reps,
+                       SUM(es.weight * es.reps) as total_volume
+                FROM exercise e
+                LEFT JOIN exercise_set es ON e.id = es.exercise_id
+                WHERE e.workout_id = :workout_id
+                GROUP BY e.id, e.name
+            """, {'workout_id': workout[0]}).fetchall()
+            
+            history.append({
+                'id': workout[0],
+                'name': workout[1],
+                'duration': workout[2],
+                'intensity': workout[3],
+                'date': workout[4],
+                'notes': workout[5],
+                'exercises': [{
+                    'name': ex[1],
+                    'total_sets': ex[2],
+                    'max_weight': ex[3],
+                    'max_reps': ex[4],
+                    'total_volume': ex[5]
+                } for ex in exercises]
+            })
+        
+        # Calculate overall stats
+        total_volume = 0
+        max_duration = 0
+        avg_intensity = 0
+        exercise_frequency = {}
+        
+        for workout in history:
+            total_volume += sum(ex['total_volume'] or 0 for ex in workout['exercises'])
+            max_duration = max(max_duration, workout['duration'] or 0)
+            avg_intensity += workout['intensity'] or 0
+            
+            for ex in workout['exercises']:
+                if ex['name'] not in exercise_frequency:
+                    exercise_frequency[ex['name']] = 0
+                exercise_frequency[ex['name']] += 1
+        
+        avg_intensity = avg_intensity / len(history) if history else 0
+        
+        # Sort exercises by frequency
+        common_exercises = sorted(
+            exercise_frequency.items(), 
+            key=lambda x: x[1], 
+            reverse=True
+        )[:5]  # Top 5 most common
+        
+        return {
+            'history': history,
+            'stats': {
+                'total_volume': total_volume,
+                'max_duration': max_duration,
+                'avg_intensity': round(avg_intensity, 1),
+                'common_exercises': common_exercises
+            },
+            'last_workout': history[0] if history else None
+        }
+    except Exception as e:
+        print(f"Error getting workout history: {e}")
+        return None
+
 @bp.route('/workouts/new/strength', methods=['GET', 'POST'])
 @login_required
 def new_strength():
@@ -217,9 +302,18 @@ def new_strength():
         if history:
             exercise_history[exercise_name] = history
     
+    # Get workout history for each type
+    workout_history = {}
+    for workout_type in ['strength_upper', 'strength_lower', 'strength_push', 
+                        'strength_pull', 'strength_full', 'strength_other']:
+        history = get_workout_history(workout_type, current_user.id)
+        if history:
+            workout_history[workout_type] = history
+    
     return render_template('workout/new_strength.html', 
                          exercise_options=get_exercise_options(),
-                         exercise_history=exercise_history)
+                         exercise_history=exercise_history,
+                         workout_history=workout_history)
 
 # Helper function to get exercise options
 def get_exercise_options():
