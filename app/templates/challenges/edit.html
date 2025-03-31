@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Challenge - Fitness Leveling{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold text-white mb-6">Edit Challenge</h1>
+        
+        <form method="POST" class="space-y-6">
+            <!-- Title -->
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-300">Title</label>
+                <input type="text" name="title" id="title" required
+                       value="{{ challenge.title }}"
+                       class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-300">Description</label>
+                <textarea name="description" id="description" rows="3"
+                          class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ challenge.description }}</textarea>
+            </div>
+            
+            <!-- Date Range -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-300">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" required
+                           value="{{ challenge.start_date.strftime('%Y-%m-%d') }}"
+                           class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-300">End Date</label>
+                    <input type="date" name="end_date" id="end_date" required
+                           value="{{ challenge.end_date.strftime('%Y-%m-%d') }}"
+                           class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+            </div>
+            
+            <!-- Goal Type -->
+            <div>
+                <label for="goal_type" class="block text-sm font-medium text-gray-300">Goal Type</label>
+                <select name="goal_type" id="goal_type" required
+                        class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="distance" {% if challenge.goal_type == 'distance' %}selected{% endif %}>Distance</option>
+                    <option value="workouts" {% if challenge.goal_type == 'workouts' %}selected{% endif %}>Number of Workouts</option>
+                </select>
+            </div>
+            
+            <!-- Goal Value and Unit -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="goal_value" class="block text-sm font-medium text-gray-300">Goal Value</label>
+                    <input type="number" name="goal_value" id="goal_value" required min="0" step="0.1"
+                           value="{{ challenge.goal_value }}"
+                           class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="goal_unit" class="block text-sm font-medium text-gray-300">Unit</label>
+                    <select name="goal_unit" id="goal_unit" required
+                            class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="miles" {% if challenge.goal_unit == 'miles' %}selected{% endif %}>Miles</option>
+                        <option value="km" {% if challenge.goal_unit == 'km' %}selected{% endif %}>Kilometers</option>
+                        <option value="workouts" {% if challenge.goal_unit == 'workouts' %}selected{% endif %}>Workouts</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Workout Type -->
+            <div>
+                <label for="workout_type" class="block text-sm font-medium text-gray-300">Workout Type</label>
+                <select name="workout_type" id="workout_type" required
+                        class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="cardio" {% if challenge.workout_type == 'cardio' %}selected{% endif %}>Cardio</option>
+                    <option value="strength" {% if challenge.workout_type == 'strength' %}selected{% endif %}>Any Strength</option>
+                    <option value="strength_upper" {% if challenge.workout_type == 'strength_upper' %}selected{% endif %}>Upper Body</option>
+                    <option value="strength_lower" {% if challenge.workout_type == 'strength_lower' %}selected{% endif %}>Lower Body</option>
+                    <option value="strength_push" {% if challenge.workout_type == 'strength_push' %}selected{% endif %}>Push</option>
+                    <option value="strength_pull" {% if challenge.workout_type == 'strength_pull' %}selected{% endif %}>Pull</option>
+                    <option value="strength_legs" {% if challenge.workout_type == 'strength_legs' %}selected{% endif %}>Legs</option>
+                </select>
+            </div>
+            
+            <!-- Privacy -->
+            <div class="flex items-center">
+                <input type="checkbox" name="is_public" id="is_public" value="1"
+                       {% if challenge.is_public %}checked{% endif %}
+                       class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500">
+                <label for="is_public" class="ml-2 block text-sm text-gray-300">Make this challenge public</label>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="flex justify-end space-x-4">
+                <a href="{{ url_for('challenges.view', challenge_id=challenge.id) }}"
+                   class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Update Challenge
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

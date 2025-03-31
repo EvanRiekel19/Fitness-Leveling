@@ -22,6 +22,13 @@
                 </span>
                 {% endif %}
 
+                {% if challenge.creator_id == current_user.id %}
+                <a href="{{ url_for('challenges.edit', challenge_id=challenge.id) }}"
+                   class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700">
+                    Edit Challenge
+                </a>
+                {% endif %}
+
                 {% if not challenge.get_participant(current_user.id) %}
                 <form action="{{ url_for('challenges.join', challenge_id=challenge.id) }}" method="POST">
                     <button type="submit"
@@ -82,14 +89,20 @@
                             <span class="text-2xl font-bold text-gray-400">{{ loop.index }}</span>
                             <div>
                                 <p class="text-gray-100">{{ participant.user.username }}</p>
-                                {% if participant.completed %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-200">
-                                    Completed
-                                </span>
-                                {% endif %}
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-xs text-gray-400">{{ participant.workout_count }} workouts</span>
+                                    {% if participant.completed %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-200">
+                                        Completed
+                                    </span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
-                        <span class="text-gray-300">{{ "%.1f"|format(participant.progress) }}%</span>
+                        <div class="text-right">
+                            <p class="text-gray-300">{{ "%.1f"|format(participant.current_value) }} / {{ challenge.goal_value }} {{ challenge.goal_unit }}</p>
+                            <p class="text-sm text-gray-400">{{ "%.1f"|format(participant.progress) }}% complete</p>
+                        </div>
                     </div>
                     <div class="w-full bg-gray-800 rounded-full h-2">
                         <div class="bg-blue-600 h-2 rounded-full" style="width: {{ participant.progress }}%"></div>

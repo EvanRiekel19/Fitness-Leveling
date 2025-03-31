@@ -144,4 +144,35 @@ def leave(challenge_id):
         db.session.commit()
         flash('You have left the challenge.', 'success')
     
-    return redirect(url_for('challenges.index')) 
+    return redirect(url_for('challenges.index'))
+
+@bp.route('/challenges/<int:challenge_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit(challenge_id):
+    challenge = Challenge.query.get_or_404(challenge_id)
+    
+    # Only the creator can edit the challenge
+    if challenge.creator_id != current_user.id:
+        flash('Only the challenge creator can edit this challenge.', 'error')
+        return redirect(url_for('challenges.view', challenge_id=challenge_id))
+    
+    if request.method == 'POST':
+        try:
+            challenge.title = request.form['title']
+            challenge.description = request.form['description']
+            challenge.start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d')
+            challenge.end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d')
+            challenge.goal_type = request.form['goal_type']
+            challenge.goal_value = float(request.form['goal_value'])
+            challenge.goal_unit = request.form['goal_unit']
+            challenge.workout_type = request.form['workout_type']
+            challenge.is_public = bool(request.form.get('is_public', True))
+            
+            db.session.commit()
+            flash('Challenge updated successfully!', 'success')
+            return redirect(url_for('challenges.view', challenge_id=challenge.id))
+        except Exception as e:
+            flash('Error updating challenge. Please try again.', 'error')
+            return redirect(url_for('challenges.edit', challenge_id=challenge.id))
+    
+    return render_template('challenges/edit.html', challenge=challenge) 
