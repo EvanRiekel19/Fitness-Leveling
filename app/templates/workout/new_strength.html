@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Detailed Strength Workout - Fitness Leveling{% endblock %}
+{% block title %}{% if workout %}Edit{% else %}New{% endif %} Strength Workout - Fitness Leveling{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto">
@@ -9,22 +9,24 @@
         <div class="lg:col-span-2">
             <div class="bg-dark-surface rounded-xl shadow-sm p-6">
                 <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-100">Log Workout</h1>
+                    <h1 class="text-2xl font-bold text-gray-100">{% if workout %}Edit{% else %}Log{% endif %} Workout</h1>
                 </div>
                 
-                <form id="strength-workout-form" method="POST" class="space-y-6">
+                <form id="strength-workout-form" method="POST" action="{{ url_for('workout.edit', id=workout.id) if workout else url_for('workout.new_strength') }}" class="space-y-6">
                     <!-- Basic Workout Information -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-300">Workout Name</label>
                             <input type="text" id="name" name="name" required
                                 class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
-                                placeholder="e.g., Upper Body Day, Leg Day">
+                                placeholder="e.g., Upper Body Day, Leg Day"
+                                value="{{ workout.name if workout else '' }}">
                         </div>
                         <div>
                             <label for="duration" class="block text-sm font-medium text-gray-300">Duration (minutes)</label>
                             <input type="number" id="duration" name="duration" required min="1"
-                                class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
+                                class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100"
+                                value="{{ workout.duration if workout else '' }}">
                         </div>
                     </div>
                     
@@ -33,23 +35,24 @@
                             <label for="subtype" class="block text-sm font-medium text-gray-300">Workout Type</label>
                             <select id="subtype" name="subtype" 
                                 class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
-                                <option value="strength_upper">Upper Body</option>
-                                <option value="strength_lower">Lower Body</option>
-                                <option value="strength_push">Push Workout</option>
-                                <option value="strength_pull">Pull Workout</option>
-                                <option value="strength_full" selected>Full Body</option>
-                                <option value="strength_other">Other Strength</option>
+                                <option value="strength_upper" {% if workout and workout.subtype == 'strength_upper' %}selected{% endif %}>Upper Body</option>
+                                <option value="strength_lower" {% if workout and workout.subtype == 'strength_lower' %}selected{% endif %}>Lower Body</option>
+                                <option value="strength_push" {% if workout and workout.subtype == 'strength_push' %}selected{% endif %}>Push Workout</option>
+                                <option value="strength_pull" {% if workout and workout.subtype == 'strength_pull' %}selected{% endif %}>Pull Workout</option>
+                                <option value="strength_full" {% if not workout or workout.subtype == 'strength_full' %}selected{% endif %}>Full Body</option>
+                                <option value="strength_other" {% if workout and workout.subtype == 'strength_other' %}selected{% endif %}>Other Strength</option>
                             </select>
                         </div>
                         
                         <div>
                             <label for="intensity" class="block text-sm font-medium text-gray-300">Overall Intensity (1-10)</label>
-                            <input type="range" id="intensity" name="intensity" min="1" max="10" value="5"
+                            <input type="range" id="intensity" name="intensity" min="1" max="10" 
+                                value="{{ workout.intensity if workout else 5 }}"
                                 class="mt-1 block w-full bg-dark-hover accent-blue-500"
                                 oninput="document.getElementById('intensity-value').textContent = this.value">
                             <div class="flex justify-between text-xs text-gray-400 mt-1">
                                 <span>Easy (1)</span>
-                                <span id="intensity-value">5</span>
+                                <span id="intensity-value">{{ workout.intensity if workout else 5 }}</span>
                                 <span>Max Effort (10)</span>
                             </div>
                         </div>
@@ -81,7 +84,7 @@
                         <label for="notes" class="block text-sm font-medium text-gray-300">Workout Notes</label>
                         <textarea id="notes" name="notes" rows="3"
                             class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
-                            placeholder="How did it feel? Any achievements or personal records?"></textarea>
+                            placeholder="How did it feel? Any achievements or personal records?">{{ workout.notes if workout else '' }}</textarea>
                     </div>
 
                     <!-- Hidden field to store exercise data as JSON -->
@@ -89,14 +92,14 @@
 
                     <!-- Submit Button -->
                     <div class="flex justify-end space-x-4">
-                        <a href="{{ url_for('workout.index') }}"
+                        <a href="{{ url_for('workout.view', workout_id=workout.id) if workout else url_for('workout.index') }}"
                             class="inline-flex items-center justify-center px-4 h-10 border border-gray-700 text-sm font-medium rounded-lg text-gray-300 bg-dark-hover hover:bg-dark-surface transition-colors">
                             Cancel
                         </a>
                         <button type="submit" id="submit-btn"
                             class="inline-flex items-center justify-center px-4 h-10 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
                             disabled>
-                            Log Workout
+                            {% if workout %}Save Changes{% else %}Log Workout{% endif %}
                         </button>
                     </div>
                 </form>
@@ -234,6 +237,7 @@
     const exercisesData = [];
     const exerciseHistory = {{ exercise_history|default({})|tojson|safe }};
     const workoutHistory = {{ workout_history|default({})|tojson|safe }};
+    const initialExercises = {{ initial_exercises|default('[]')|safe }};
     
     // DOM Elements
     const exercisesContainer = document.getElementById('exercises-container');
@@ -246,12 +250,38 @@
     const workoutTypeSelect = document.getElementById('subtype');
     const workoutHistoryDiv = document.getElementById('workout-history');
     
-    // Initialization
+    // Initialize form
     document.addEventListener('DOMContentLoaded', () => {
+        // Set up event listeners
         addExerciseBtn.addEventListener('click', addExercise);
         document.getElementById('strength-workout-form').addEventListener('submit', prepareFormSubmission);
         workoutTypeSelect.addEventListener('change', updateWorkoutHistory);
-        updateWorkoutHistory(); // Show initial history
+        
+        // Load initial exercises if editing
+        if (initialExercises && initialExercises.length > 0) {
+            initialExercises.forEach(exerciseData => {
+                const exerciseCard = addExercise();
+                const exerciseNameInput = exerciseCard.querySelector('.exercise-name');
+                exerciseNameInput.value = exerciseData.name;
+                
+                // Add sets
+                exerciseData.sets.forEach(setData => {
+                    const setRow = addSet(exerciseCard);
+                    const weightInput = setRow.querySelector('.set-weight');
+                    const repsInput = setRow.querySelector('.set-reps');
+                    const notesInput = setRow.querySelector('.set-notes');
+                    
+                    weightInput.value = setData.weight || '';
+                    repsInput.value = setData.reps || '';
+                    notesInput.value = setData.notes || '';
+                });
+            });
+            
+            updateExerciseData();
+        }
+        
+        // Initialize UI state
+        updateWorkoutHistory();
         updateSubmitButtonState();
         updatePreviousWorkout();
     });
@@ -733,17 +763,5 @@
         prevWorkoutDetails.classList.remove('hidden');
         console.log('Previous workout display updated successfully');
     }
-    
-    // Add event listener for workout type change
-    document.getElementById('subtype').addEventListener('change', function() {
-        console.log('Workout type changed to:', this.value);
-        updatePreviousWorkout();
-    });
-    
-    // Call on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Page loaded, initializing previous workout display');
-        updatePreviousWorkout();
-    });
 </script>
 {% endblock %} 

@@ -519,3 +519,99 @@ def get_last_workout(workout_type):
     except Exception as e:
         print(f"Error getting last workout: {e}")
         return jsonify({'error': str(e)}), 500
+
+@bp.route('/workouts/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit(id):
+    # Get the workout
+    workout = Workout.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'POST':
+        try:
+            # Helper functions
+            def safe_int(value, default=0):
+                try:
+                    return int(value) if value else default
+                except (ValueError, TypeError):
+                    return default
+
+            def safe_float(value, default=0.0):
+                try:
+                    return float(value) if value else default
+                except (ValueError, TypeError):
+                    return default
+
+            # Update workout details
+            workout.name = request.form.get('name', workout.name)
+            workout.duration = safe_int(request.form.get('duration'), workout.duration)
+            workout.intensity = safe_int(request.form.get('intensity'), workout.intensity)
+            workout.notes = request.form.get('notes', workout.notes)
+            
+            # Process exercises data from form
+            try:
+                exercises_data = json.loads(request.form.get('exercises_data', '[]'))
+                
+                # Delete existing exercises and their sets
+                for exercise in workout.exercises:
+                    for set_ in exercise.sets:
+                        db.session.delete(set_)
+                    db.session.delete(exercise)
+                
+                # Create new exercises and sets
+                for exercise_data in exercises_data:
+                    exercise = Exercise(
+                        workout_id=workout.id,
+                        name=exercise_data['name']
+                    )
+                    db.session.add(exercise)
+                    db.session.flush()  # Get the exercise ID
+                    
+                    # Add sets for this exercise
+                    for set_data in exercise_data['sets']:
+                        set_ = ExerciseSet(
+                            exercise_id=exercise.id,
+                            set_number=set_data['set_number'],
+                            weight=safe_float(set_data.get('weight')),
+                            reps=safe_int(set_data.get('reps')),
+                            notes=set_data.get('notes', '')
+                        )
+                        db.session.add(set_)
+                
+                db.session.commit()
+                flash('Workout updated successfully!', 'success')
+                return redirect(url_for('workout.view', workout_id=workout.id))
+                
+            except json.JSONDecodeError:
+                flash('Invalid exercise data format', 'error')
+                db.session.rollback()
+                return redirect(url_for('workout.edit', id=workout.id))
+                
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating workout: {str(e)}', 'error')
+            return redirect(url_for('workout.edit', id=workout.id))
+    
+    # GET request - show edit form
+    # Get exercises and their sets
+    exercises = []
+    for exercise in workout.exercises:
+        sets = []
+        for set_ in sorted(exercise.sets, key=lambda x: x.set_number):
+            sets.append({
+                'set_number': set_.set_number,
+                'weight': set_.weight,
+                'reps': set_.reps,
+                'notes': set_.notes
+            })
+        exercises.append({
+            'name': exercise.name,
+            'sets': sets
+        })
+    
+    # Convert exercises to JSON for the form
+    exercises_json = json.dumps(exercises)
+    
+    return render_template('workout/new_strength.html', 
+                         workout=workout,
+                         exercise_options=get_exercise_options(),
+                         initial_exercises=exercises_json)
