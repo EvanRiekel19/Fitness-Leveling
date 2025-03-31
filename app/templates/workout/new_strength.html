@@ -201,16 +201,16 @@
             <span class="set-number">%SET_NUMBER%</span>
         </td>
         <td class="px-2 py-2">
-            <input type="number" class="set-weight w-20 bg-dark-surface border-gray-700 rounded focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-100" 
-                step="0.5" min="0" placeholder="Weight">
+            <input type="number" class="set-weight block w-full bg-dark-surface border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100" 
+                placeholder="0" min="0" step="0.5">
         </td>
         <td class="px-2 py-2">
-            <input type="number" class="set-reps w-16 bg-dark-surface border-gray-700 rounded focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-100" 
-                min="0" placeholder="Reps">
+            <input type="number" class="set-reps block w-full bg-dark-surface border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100" 
+                placeholder="0" min="1" required>
         </td>
         <td class="px-2 py-2">
-            <input type="text" class="set-notes w-full bg-dark-surface border-gray-700 rounded focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-100" 
-                placeholder="e.g., PR, Drop set, Failed">
+            <input type="text" class="set-notes block w-full bg-dark-surface border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100" 
+                placeholder="Optional notes">
         </td>
         <td class="px-2 py-2">
             <button type="button" class="remove-set-btn text-gray-400 hover:text-red-400">
@@ -235,127 +235,57 @@
     // Global variables
     let exerciseCounter = 0;
     const exercisesData = [];
-    const exerciseHistory = {{ exercise_history|default({})|tojson|safe }};
-    const workoutHistory = {{ workout_history|default({})|tojson|safe }};
-    const initialExercises = {{ initial_exercises|default('[]')|safe }};
+    
+    // Initialize data from server
+    const serverData = {
+        exerciseHistory: {{ exercise_history|default({})|tojson|safe }},
+        workoutHistory: {{ workout_history|default({})|tojson|safe }},
+        initialExercises: {{ initial_exercises|default('[]')|safe }}
+    };
     
     // DOM Elements
+    const workoutForm = document.getElementById('strength-workout-form');
+    const submitBtn = document.getElementById('submit-btn');
     const exercisesContainer = document.getElementById('exercises-container');
     const noExercisesMessage = document.getElementById('no-exercises-message');
+    const exercisesDataInput = document.getElementById('exercises-data');
+    const nameInput = document.getElementById('name');
+    const durationInput = document.getElementById('duration');
+    const subtypeSelect = document.getElementById('subtype');
+    const workoutHistoryDiv = document.getElementById('workout-history');
     const addExerciseBtn = document.getElementById('add-exercise-btn');
     const exerciseTemplate = document.getElementById('exercise-template');
     const setRowTemplate = document.getElementById('set-row-template');
-    const exercisesDataInput = document.getElementById('exercises-data');
-    const submitBtn = document.getElementById('submit-btn');
-    const workoutTypeSelect = document.getElementById('subtype');
-    const workoutHistoryDiv = document.getElementById('workout-history');
     
     // Initialize form
     document.addEventListener('DOMContentLoaded', () => {
         // Set up event listeners
-        addExerciseBtn.addEventListener('click', () => addExercise());
-        document.getElementById('strength-workout-form').addEventListener('submit', prepareFormSubmission);
-        workoutTypeSelect.addEventListener('change', updateWorkoutHistory);
+        workoutForm.addEventListener('submit', prepareFormSubmission);
+        nameInput.addEventListener('input', updateSubmitButtonState);
+        durationInput.addEventListener('input', updateSubmitButtonState);
+        subtypeSelect.addEventListener('change', updatePreviousWorkout);
+        addExerciseBtn.addEventListener('click', addExercise);
         
-        // Load initial exercises if editing
-        if (initialExercises && initialExercises.length > 0) {
-            // Hide the "no exercises" message
-            noExercisesMessage.style.display = 'none';
-            
-            initialExercises.forEach(exerciseData => {
-                // Create a new exercise card
-                exerciseCounter++;
-                const exerciseId = exerciseCounter;
-                
-                // Clone template and replace placeholders
-                const exerciseHTML = exerciseTemplate.innerHTML.replace(/%EXERCISE_ID%/g, exerciseId);
-                
-                // Create container and add HTML
-                const exerciseElement = document.createElement('div');
-                exerciseElement.innerHTML = exerciseHTML;
-                exerciseElement.dataset.exerciseId = exerciseId;
-                exerciseElement.className = 'exercise-card-container';
-                
-                // Add exercise to DOM
-                exercisesContainer.appendChild(exerciseElement);
-                
-                // Set up the exercise card
-                const exerciseCard = exerciseElement.querySelector('.exercise-card');
-                const removeExerciseBtn = exerciseCard.querySelector('.remove-exercise-btn');
-                const addSetBtn = exerciseCard.querySelector('.add-set-btn');
-                const exerciseNameInput = exerciseCard.querySelector('.exercise-name');
-                const setsTableBody = exerciseCard.querySelector('.sets-table-body');
-                const noSetsMessage = exerciseCard.querySelector('.no-sets-message');
-                
-                // Set exercise name
-                exerciseNameInput.value = exerciseData.name;
-                
-                // Add event listeners
-                removeExerciseBtn.addEventListener('click', () => removeExercise(exerciseId));
-                addSetBtn.addEventListener('click', () => addSet(exerciseId));
-                exerciseNameInput.addEventListener('change', () => {
-                    updateExerciseHistory(exerciseCard, exerciseNameInput.value);
-                    updateExercisesData();
+        // Initialize exercise data if editing
+        if (serverData.initialExercises && serverData.initialExercises.length > 0) {
+            try {
+                serverData.initialExercises.forEach(exercise => {
+                    const exerciseCard = createExerciseCard();
+                    const nameInput = exerciseCard.querySelector('.exercise-name');
+                    nameInput.value = exercise.name;
+                    
+                    exercise.sets.forEach(set => {
+                        addSet(exerciseCard, set);
+                    });
+                    
+                    updateExerciseHistory(nameInput);
                 });
-                
-                // Hide "no sets" message if there are sets
-                if (exerciseData.sets && exerciseData.sets.length > 0) {
-                    noSetsMessage.style.display = 'none';
-                }
-                
-                // Add sets
-                exerciseData.sets.forEach(setData => {
-                    // Clone template and replace placeholders
-                    const setRowHTML = setRowTemplate.innerHTML.replace(/%SET_NUMBER%/g, setData.set_number);
-                    
-                    // Create row and add HTML
-                    const setRow = document.createElement('tr');
-                    setRow.innerHTML = setRowHTML;
-                    setRow.classList.add('set-row');
-                    setRow.dataset.setNumber = setData.set_number;
-                    
-                    // Set values
-                    setRow.querySelector('.set-weight').value = setData.weight || '';
-                    setRow.querySelector('.set-reps').value = setData.reps || '';
-                    setRow.querySelector('.set-notes').value = setData.notes || '';
-                    
-                    // Add event listeners
-                    const removeSetBtn = setRow.querySelector('.remove-set-btn');
-                    const weightInput = setRow.querySelector('.set-weight');
-                    const repsInput = setRow.querySelector('.set-reps');
-                    const notesInput = setRow.querySelector('.set-notes');
-                    
-                    removeSetBtn.addEventListener('click', () => removeSet(exerciseId, setData.set_number));
-                    weightInput.addEventListener('change', updateExercisesData);
-                    repsInput.addEventListener('change', updateExercisesData);
-                    notesInput.addEventListener('change', updateExercisesData);
-                    
-                    // Add to DOM
-                    setsTableBody.appendChild(setRow);
-                });
-                
-                // Add to data structure
-                exercisesData.push({
-                    id: exerciseId,
-                    name: exerciseData.name,
-                    sets: exerciseData.sets.map(set => ({
-                        setNumber: set.set_number,
-                        weight: set.weight || '',
-                        reps: set.reps || '',
-                        notes: set.notes || ''
-                    }))
-                });
-                
-                // Update exercise history
-                updateExerciseHistory(exerciseCard, exerciseData.name);
-            });
-            
-            updateExercisesData();
-            updateSubmitButtonState();
+            } catch (e) {
+                console.error('Error initializing exercises:', e);
+            }
         }
         
         // Initialize UI state
-        updateWorkoutHistory();
         updateSubmitButtonState();
         updatePreviousWorkout();
     });
@@ -374,8 +304,8 @@
     
     // Function to update workout history display
     function updateWorkoutHistory() {
-        const selectedType = workoutTypeSelect.value;
-        const history = workoutHistory[selectedType];
+        const selectedType = subtypeSelect.value;
+        const history = serverData.workoutHistory[selectedType];
         
         if (!history) {
             workoutHistoryDiv.innerHTML = '<p class="text-gray-400 italic mt-2">No previous workouts of this type</p>';
@@ -437,7 +367,7 @@
     // Function to update exercise history display
     function updateExerciseHistory(exerciseCard, exerciseName) {
         const historyDiv = exerciseCard.querySelector('.exercise-history');
-        const history = exerciseHistory[exerciseName];
+        const history = serverData.exerciseHistory[exerciseName];
         
         if (!history) {
             historyDiv.innerHTML = '<p class="text-gray-400 italic">No previous history</p>';
@@ -730,15 +660,28 @@
     
     // Enable/disable submit button based on form validity
     function updateSubmitButtonState() {
-        const workoutName = document.getElementById('name').value;
-        const duration = document.getElementById('duration').value;
-        const hasExercises = exercisesData.length > 0;
-        const hasValidExercises = exercisesData.every(ex => ex.name.trim() !== '');
+        const workoutName = nameInput.value.trim();
+        const duration = parseInt(durationInput.value);
+        const hasExercises = exercisesContainer.querySelectorAll('.exercise-card').length > 0;
+        const hasValidExercises = Array.from(exercisesContainer.querySelectorAll('.exercise-name')).every(input => input.value.trim() !== '');
+        const hasValidSets = Array.from(exercisesContainer.querySelectorAll('.exercise-card')).every(card => {
+            const sets = card.querySelectorAll('.set-row');
+            return sets.length > 0 && Array.from(sets).every(set => {
+                const reps = parseInt(set.querySelector('.set-reps').value);
+                return !isNaN(reps) && reps > 0;
+            });
+        });
         
-        if (workoutName && duration && hasExercises && hasValidExercises) {
-            submitBtn.disabled = false;
+        const isValid = workoutName && duration > 0 && hasExercises && hasValidExercises && hasValidSets;
+        submitBtn.disabled = !isValid;
+        
+        // Update button appearance
+        if (isValid) {
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.add('hover:bg-blue-700');
         } else {
-            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.remove('hover:bg-blue-700');
         }
     }
     
@@ -746,16 +689,32 @@
     function prepareFormSubmission(e) {
         updateExercisesData();
         
-        // Final validation check
-        const workoutName = document.getElementById('name').value;
-        const duration = document.getElementById('duration').value;
-        const hasExercises = exercisesData.length > 0;
-        const hasValidExercises = exercisesData.every(ex => ex.name.trim() !== '');
+        const workoutName = nameInput.value.trim();
+        const duration = parseInt(durationInput.value);
+        const hasExercises = exercisesContainer.querySelectorAll('.exercise-card').length > 0;
+        const hasValidExercises = Array.from(exercisesContainer.querySelectorAll('.exercise-name')).every(input => input.value.trim() !== '');
+        const hasValidSets = Array.from(exercisesContainer.querySelectorAll('.exercise-card')).every(card => {
+            const sets = card.querySelectorAll('.set-row');
+            return sets.length > 0 && Array.from(sets).every(set => {
+                const reps = parseInt(set.querySelector('.set-reps').value);
+                return !isNaN(reps) && reps > 0;
+            });
+        });
         
-        if (!workoutName || !duration || !hasExercises || !hasValidExercises) {
+        if (!workoutName || duration <= 0 || !hasExercises || !hasValidExercises || !hasValidSets) {
             e.preventDefault();
-            alert('Please fill out all required fields and add at least one exercise.');
+            let message = 'Please fix the following issues:\n';
+            if (!workoutName) message += '- Workout name is required\n';
+            if (duration <= 0) message += '- Duration must be greater than 0\n';
+            if (!hasExercises) message += '- Add at least one exercise\n';
+            if (!hasValidExercises) message += '- All exercises must have names\n';
+            if (!hasValidSets) message += '- All exercises must have at least one set with valid reps\n';
+            alert(message);
+            return;
         }
+        
+        // Enable submit button before form submission
+        submitBtn.disabled = false;
     }
     
     // Function to update previous workout info
@@ -763,9 +722,9 @@
         const workoutType = document.getElementById('subtype').value;
         console.log('\nDEBUG: Updating previous workout display');
         console.log('Workout type selected:', workoutType);
-        console.log('Available workout history:', JSON.stringify(workoutHistory, null, 2));
+        console.log('Available workout history:', JSON.stringify(serverData.workoutHistory, null, 2));
         
-        const history = workoutHistory[workoutType];
+        const history = serverData.workoutHistory[workoutType];
         console.log('History found for this type:', history ? 'yes' : 'no');
         if (history) {
             console.log('Last workout:', history.last_workout);

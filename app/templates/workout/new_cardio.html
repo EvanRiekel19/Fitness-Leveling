@@ -136,12 +136,18 @@
     const submitBtn = document.getElementById('submit-btn');
     const noPreviousWorkoutDiv = document.getElementById('no-previous-workout');
     const previousWorkoutDetailsDiv = document.getElementById('previous-workout-details');
+    const nameInput = document.getElementById('name');
+    const durationInput = document.getElementById('duration');
     
     // Initialize form
     document.addEventListener('DOMContentLoaded', () => {
         // Set up event listeners
         workoutTypeSelect.addEventListener('change', updateWorkoutHistory);
         workoutForm.addEventListener('submit', validateForm);
+        
+        // Add input event listeners for real-time validation
+        nameInput.addEventListener('input', updateSubmitButtonState);
+        durationInput.addEventListener('input', updateSubmitButtonState);
         
         // Initialize UI state
         updateWorkoutHistory();
@@ -164,7 +170,6 @@
     function updateWorkoutHistory() {
         const selectedType = workoutTypeSelect.value;
         
-        // Fetch last workout data
         fetch(`/api/workouts/last/${selectedType}`)
             .then(response => response.json())
             .then(data => {
@@ -172,7 +177,6 @@
                     noPreviousWorkoutDiv.classList.add('hidden');
                     previousWorkoutDetailsDiv.classList.remove('hidden');
                     
-                    // Update the display
                     document.getElementById('prev-workout-date').textContent = formatDate(data.last_workout.date);
                     document.getElementById('prev-workout-duration').textContent = `${data.last_workout.duration} min`;
                     document.getElementById('prev-workout-distance').textContent = `${data.last_workout.distance || 0} km`;
@@ -192,31 +196,43 @@
     
     // Function to validate form before submission
     function validateForm(e) {
-        const workoutName = document.getElementById('name').value;
-        const duration = document.getElementById('duration').value;
-        const distance = document.getElementById('distance').value;
+        const workoutName = nameInput.value.trim();
+        const duration = parseInt(durationInput.value);
+        const distance = parseFloat(document.getElementById('distance').value);
         
-        if (!workoutName || !duration) {
+        if (!workoutName || !duration || duration <= 0) {
             e.preventDefault();
             alert('Please fill out all required fields (name and duration).');
             return false;
         }
         
-        if (distance && parseFloat(distance) <= 0) {
+        if (distance && distance <= 0) {
             e.preventDefault();
             alert('Distance must be greater than 0 if provided.');
             return false;
         }
         
+        // Enable submit button before form submission
+        submitBtn.disabled = false;
         return true;
     }
     
     // Function to enable/disable submit button based on form validity
     function updateSubmitButtonState() {
-        const workoutName = document.getElementById('name').value;
-        const duration = document.getElementById('duration').value;
+        const workoutName = nameInput.value.trim();
+        const duration = parseInt(durationInput.value);
         
-        submitBtn.disabled = !workoutName || !duration;
+        const isValid = workoutName && duration && duration > 0;
+        submitBtn.disabled = !isValid;
+        
+        // Update button appearance
+        if (isValid) {
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.add('hover:bg-blue-700');
+        } else {
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.remove('hover:bg-blue-700');
+        }
     }
 </script>
 {% endblock %} 
