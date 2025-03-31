@@ -258,16 +258,16 @@ def new_strength():
                     sets_data = exercise_data.get('sets', [])
                     print(f"DEBUG STRENGTH: Processing {len(sets_data)} sets for exercise '{exercise_name}'")
                     
-                    for set_idx, set_data in enumerate(sets_data, 1):
+                    for set_data in sets_data:
                         exercise_set = ExerciseSet(
                             exercise_id=exercise.id,
-                            set_number=set_idx,
+                            set_number=set_data.get('set_number', 1),  # Use the set number from the form
                             reps=safe_int(set_data.get('reps')),
                             weight=safe_float(set_data.get('weight')),
                             notes=set_data.get('notes', '')
                         )
                         db.session.add(exercise_set)
-                        print(f"DEBUG STRENGTH: Added set {set_idx} with {safe_int(set_data.get('reps'))} reps at {safe_float(set_data.get('weight'))} kg")
+                        print(f"DEBUG STRENGTH: Added set {exercise_set.set_number} with {safe_int(set_data.get('reps'))} reps at {safe_float(set_data.get('weight'))} kg")
                 except Exception as e:
                     print(f"DEBUG STRENGTH: Error adding exercise {i+1}: {e}")
             

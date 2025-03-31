@@ -560,14 +560,18 @@
         
         // Update hidden input with JSON data
         // We need to clean up the data to remove the ID fields which are only used client-side
-        const cleanData = exercisesData.map(exercise => ({
-            name: exercise.name,
-            sets: exercise.sets.map(set => ({
-                reps: set.reps,
-                weight: set.weight,
-                notes: set.notes
-            }))
-        }));
+        const cleanData = exercisesData.map(exercise => {
+            const sortedSets = exercise.sets.sort((a, b) => a.setNumber - b.setNumber);
+            return {
+                name: exercise.name,
+                sets: sortedSets.map(set => ({
+                    reps: set.reps,
+                    weight: set.weight,
+                    notes: set.notes,
+                    set_number: set.setNumber
+                }))
+            };
+        });
         
         exercisesDataInput.value = JSON.stringify(cleanData);
         updateSubmitButtonState();
