@@ -16,8 +16,91 @@ def index():
 @bp.route('/workouts/new', methods=['GET', 'POST'])
 @login_required
 def new():
-    # Always redirect to the detailed strength form
-    return redirect(url_for('workout.new_strength'))
+    # Show workout type selection page
+    return render_template('workout/new.html')
+
+@bp.route('/workouts/new/cardio', methods=['GET', 'POST'])
+@login_required
+def new_cardio():
+    if request.method == 'POST':
+        try:
+            # Helper functions
+            def safe_int(value, default=0):
+                try:
+                    return int(value) if value else default
+                except (ValueError, TypeError):
+                    return default
+
+            def safe_float(value, default=0.0):
+                try:
+                    return float(value) if value else default
+                except (ValueError, TypeError):
+                    return default
+
+            # Get the subtype
+            subtype = request.form.get('subtype', 'cardio_other')
+            print(f"DEBUG CARDIO: Using subtype: {subtype}")
+            
+            # Create workout
+            workout = Workout(
+                user_id=current_user.id,
+                type='cardio',
+                subtype=subtype,
+                name=request.form.get('name', ''),
+                duration=safe_int(request.form.get('duration')),
+                intensity=safe_int(request.form.get('intensity'), 5),
+                distance=safe_float(request.form.get('distance')),
+                notes=request.form.get('notes', '')
+            )
+            
+            # Validate required fields
+            if not workout.name:
+                flash('Workout name is required', 'error')
+                return render_template('workout/new_cardio.html')
+            
+            if workout.duration <= 0:
+                flash('Duration must be greater than 0', 'error')
+                return render_template('workout/new_cardio.html')
+            
+            # Save workout
+            db.session.add(workout)
+            
+            # Calculate XP and update user
+            try:
+                xp_earned = workout.calculate_xp()
+                print(f"DEBUG CARDIO: Calculated XP: {xp_earned}")
+                
+                current_user.add_xp(xp_earned)
+                print(f"DEBUG CARDIO: Added XP to user")
+            except Exception as e:
+                print(f"DEBUG CARDIO: XP calculation/assignment error: {e}")
+                xp_earned = 50  # Fallback
+            
+            db.session.commit()
+            print(f"DEBUG CARDIO: Successfully committed workout")
+            
+            flash(f'Cardio workout logged! Earned {xp_earned} XP', 'success')
+            return redirect(url_for('workout.index'))
+        except Exception as e:
+            db.session.rollback()
+            import traceback
+            print(f"ERROR in cardio workout submission: {e}")
+            print(traceback.format_exc())
+            flash(f'Error logging workout: {str(e)}', 'error')
+            return render_template('workout/new_cardio.html')
+    else:  # GET request
+        # Get workout history for all cardio workout types
+        workout_history = {}
+        for workout_type in ['cardio_running', 'cardio_cycling', 'cardio_swimming', 'cardio_hiit', 'cardio_other']:
+            history = get_workout_history(workout_type, current_user.id)
+            if history:
+                workout_history[workout_type] = history
+        
+        # Render template
+        return render_template(
+            'workout/new_cardio.html',
+            workout_history=workout_history
+        )
 
 def get_exercise_history(exercise_name, user_id):
     """Get previous workout data and PRs for a specific exercise."""

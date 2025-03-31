@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}{% if workout %}Edit{% else %}New{% endif %} Cardio Workout - Fitness Leveling{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Form Section -->
+        <div class="lg:col-span-2">
+            <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-gray-100">{% if workout %}Edit{% else %}Log{% endif %} Cardio Workout</h1>
+                </div>
+                
+                <form id="cardio-workout-form" method="POST" action="{{ url_for('workout.edit', id=workout.id) if workout else url_for('workout.new_cardio') }}" class="space-y-6">
+                    <!-- Basic Workout Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-300">Workout Name</label>
+                            <input type="text" id="name" name="name" required
+                                class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
+                                placeholder="e.g., Morning Run, HIIT Session"
+                                value="{{ workout.name if workout else '' }}">
+                        </div>
+                        <div>
+                            <label for="duration" class="block text-sm font-medium text-gray-300">Duration (minutes)</label>
+                            <input type="number" id="duration" name="duration" required min="1"
+                                class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100"
+                                value="{{ workout.duration if workout else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="subtype" class="block text-sm font-medium text-gray-300">Workout Type</label>
+                            <select id="subtype" name="subtype" 
+                                class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
+                                <option value="cardio_running" {% if workout and workout.subtype == 'cardio_running' %}selected{% endif %}>Running</option>
+                                <option value="cardio_cycling" {% if workout and workout.subtype == 'cardio_cycling' %}selected{% endif %}>Cycling</option>
+                                <option value="cardio_swimming" {% if workout and workout.subtype == 'cardio_swimming' %}selected{% endif %}>Swimming</option>
+                                <option value="cardio_hiit" {% if workout and workout.subtype == 'cardio_hiit' %}selected{% endif %}>HIIT</option>
+                                <option value="cardio_other" {% if workout and workout.subtype == 'cardio_other' %}selected{% endif %}>Other Cardio</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="intensity" class="block text-sm font-medium text-gray-300">Overall Intensity (1-10)</label>
+                            <input type="range" id="intensity" name="intensity" min="1" max="10" 
+                                value="{{ workout.intensity if workout else 5 }}"
+                                class="mt-1 block w-full bg-dark-hover accent-blue-500"
+                                oninput="document.getElementById('intensity-value').textContent = this.value">
+                            <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                <span>Easy (1)</span>
+                                <span id="intensity-value">{{ workout.intensity if workout else 5 }}</span>
+                                <span>Max Effort (10)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Distance Section -->
+                    <div>
+                        <label for="distance" class="block text-sm font-medium text-gray-300">Distance (km)</label>
+                        <input type="number" id="distance" name="distance" step="0.01" min="0"
+                            class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100"
+                            value="{{ workout.distance if workout else '' }}"
+                            placeholder="Enter distance in kilometers">
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-300">Workout Notes</label>
+                        <textarea id="notes" name="notes" rows="3"
+                            class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
+                            placeholder="How did it feel? Any achievements or personal records?">{{ workout.notes if workout else '' }}</textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end space-x-4">
+                        <a href="{{ url_for('workout.view', workout_id=workout.id) if workout else url_for('workout.index') }}"
+                            class="inline-flex items-center justify-center px-4 h-10 border border-gray-700 text-sm font-medium rounded-lg text-gray-300 bg-dark-hover hover:bg-dark-surface transition-colors">
+                            Cancel
+                        </a>
+                        <button type="submit" id="submit-btn"
+                            class="inline-flex items-center justify-center px-4 h-10 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                            {% if workout %}Save Changes{% else %}Log Workout{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Previous Workout Section (Sidebar) -->
+        <div class="lg:col-span-1">
+            <div class="bg-dark-surface rounded-xl shadow-sm p-6 sticky top-6">
+                <div id="no-previous-workout" class="hidden mt-4 text-gray-400">
+                    No previous workout found for this type
+                </div>
+                <div id="previous-workout-details" class="hidden">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-100">Previous Workout</h3>
+                    <div class="bg-gray-800/50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <span class="text-gray-400">Date:</span>
+                                <span id="prev-workout-date" class="text-gray-200 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Duration:</span>
+                                <span id="prev-workout-duration" class="text-gray-200 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Distance:</span>
+                                <span id="prev-workout-distance" class="text-gray-200 ml-2"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Intensity:</span>
+                                <span id="prev-workout-intensity" class="text-gray-200 ml-2"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-gray-300 font-medium mb-2">Notes:</h4>
+                            <div id="prev-workout-notes" class="text-gray-400 text-sm"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // DOM Elements
+    const workoutTypeSelect = document.getElementById('subtype');
+    const workoutForm = document.getElementById('cardio-workout-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const noPreviousWorkoutDiv = document.getElementById('no-previous-workout');
+    const previousWorkoutDetailsDiv = document.getElementById('previous-workout-details');
+    
+    // Initialize form
+    document.addEventListener('DOMContentLoaded', () => {
+        // Set up event listeners
+        workoutTypeSelect.addEventListener('change', updateWorkoutHistory);
+        workoutForm.addEventListener('submit', validateForm);
+        
+        // Initialize UI state
+        updateWorkoutHistory();
+        updateSubmitButtonState();
+    });
+    
+    // Function to format date
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    }
+    
+    // Function to update workout history display
+    function updateWorkoutHistory() {
+        const selectedType = workoutTypeSelect.value;
+        
+        // Fetch last workout data
+        fetch(`/api/workouts/last/${selectedType}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.last_workout) {
+                    noPreviousWorkoutDiv.classList.add('hidden');
+                    previousWorkoutDetailsDiv.classList.remove('hidden');
+                    
+                    // Update the display
+                    document.getElementById('prev-workout-date').textContent = formatDate(data.last_workout.date);
+                    document.getElementById('prev-workout-duration').textContent = `${data.last_workout.duration} min`;
+                    document.getElementById('prev-workout-distance').textContent = `${data.last_workout.distance || 0} km`;
+                    document.getElementById('prev-workout-intensity').textContent = `${data.last_workout.intensity}/10`;
+                    document.getElementById('prev-workout-notes').textContent = data.last_workout.notes || 'No notes';
+                } else {
+                    noPreviousWorkoutDiv.classList.remove('hidden');
+                    previousWorkoutDetailsDiv.classList.add('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching workout history:', error);
+                noPreviousWorkoutDiv.classList.remove('hidden');
+                previousWorkoutDetailsDiv.classList.add('hidden');
+            });
+    }
+    
+    // Function to validate form before submission
+    function validateForm(e) {
+        const workoutName = document.getElementById('name').value;
+        const duration = document.getElementById('duration').value;
+        const distance = document.getElementById('distance').value;
+        
+        if (!workoutName || !duration) {
+            e.preventDefault();
+            alert('Please fill out all required fields (name and duration).');
+            return false;
+        }
+        
+        if (distance && parseFloat(distance) <= 0) {
+            e.preventDefault();
+            alert('Distance must be greater than 0 if provided.');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // Function to enable/disable submit button based on form validity
+    function updateSubmitButtonState() {
+        const workoutName = document.getElementById('name').value;
+        const duration = document.getElementById('duration').value;
+        
+        submitBtn.disabled = !workoutName || !duration;
+    }
+</script>
+{% endblock %} 

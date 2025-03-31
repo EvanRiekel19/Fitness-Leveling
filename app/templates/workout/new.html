@@ -1,137 +1,47 @@
 {% extends "base.html" %}
 
-{% block title %}Log New Workout - Fitness Leveling{% endblock %}
+{% block title %}New Workout - Fitness Leveling{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto">
+<div class="max-w-7xl mx-auto">
     <div class="bg-dark-surface rounded-xl shadow-sm p-6">
-        <h1 class="text-2xl font-bold text-gray-100 mb-6">Log New Workout</h1>
-        
-        <!-- Button for detailed strength training form -->
-        <div class="mb-6 text-center">
-            <a href="{{ url_for('workout.new_strength') }}" 
-               class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Use Detailed Strength Training Form
-            </a>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-100">Log a Workout</h1>
         </div>
         
-        <form method="POST" class="space-y-6">
-            <div>
-                <label for="type" class="block text-sm font-medium text-gray-300">Workout Type</label>
-                <select id="type" name="type" required
-                    class="mt-1 block w-full pl-3 pr-10 py-2 text-gray-100 bg-dark-hover border-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg">
-                    <!-- Cardio options -->
-                    <optgroup label="Cardio">
-                        <option value="cardio_running">Running</option>
-                        <option value="cardio_walking">Walking</option>
-                        <option value="cardio_cycling">Cycling</option>
-                        <option value="cardio_swimming">Swimming</option>
-                        <option value="cardio_hiit">HIIT</option>
-                        <option value="cardio_other">Other Cardio</option>
-                    </optgroup>
-                    
-                    <!-- Strength options -->
-                    <optgroup label="Strength Training">
-                        <option value="strength_upper">Upper Body</option>
-                        <option value="strength_lower">Lower Body</option>
-                        <option value="strength_push">Push</option>
-                        <option value="strength_pull">Pull</option>
-                        <option value="strength_full">Full Body</option>
-                        <option value="strength_other">Other Strength</option>
-                    </optgroup>
-                    
-                    <!-- Flexibility options -->
-                    <optgroup label="Flexibility">
-                        <option value="flexibility_yoga">Yoga</option>
-                        <option value="flexibility_stretching">Stretching</option>
-                        <option value="flexibility_other">Other Flexibility</option>
-                    </optgroup>
-                </select>
-            </div>
-
-            <div>
-                <label for="name" class="block text-sm font-medium text-gray-300">Workout Name</label>
-                <input type="text" id="name" name="name" required
-                    class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
-                    placeholder="e.g., Morning Run, Upper Body Workout">
-            </div>
-
-            <div>
-                <label for="duration" class="block text-sm font-medium text-gray-300">Duration (minutes)</label>
-                <input type="number" id="duration" name="duration" required min="1"
-                    class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
-            </div>
-
-            <div>
-                <label for="intensity" class="block text-sm font-medium text-gray-300">Intensity (1-10)</label>
-                <input type="number" id="intensity" name="intensity" required min="1" max="10"
-                    class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
-            </div>
-
-            <div id="strength-fields" class="hidden space-y-4">
-                <div>
-                    <label for="sets" class="block text-sm font-medium text-gray-300">Number of Sets</label>
-                    <input type="number" id="sets" name="sets" min="0"
-                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Strength Workout Card -->
+            <a href="{{ url_for('workout.new_strength') }}" class="block">
+                <div class="bg-dark-hover hover:bg-dark-surface rounded-lg p-6 border border-gray-700 hover:border-blue-500 transition-colors">
+                    <div class="flex items-center mb-4">
+                        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M3 12h18M3 18h18"></path>
+                        </svg>
+                        <h2 class="text-xl font-semibold text-gray-100 ml-3">Strength Training</h2>
+                    </div>
+                    <p class="text-gray-400">Log a strength training workout with exercises, sets, reps, and weights.</p>
+                    <div class="mt-4 text-sm text-gray-500">
+                        Includes: Upper Body, Lower Body, Push, Pull, Full Body
+                    </div>
                 </div>
-
-                <div>
-                    <label for="reps" class="block text-sm font-medium text-gray-300">Reps per Set</label>
-                    <input type="number" id="reps" name="reps" min="0"
-                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
+            </a>
+            
+            <!-- Cardio Workout Card -->
+            <a href="{{ url_for('workout.new_cardio') }}" class="block">
+                <div class="bg-dark-hover hover:bg-dark-surface rounded-lg p-6 border border-gray-700 hover:border-blue-500 transition-colors">
+                    <div class="flex items-center mb-4">
+                        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <h2 class="text-xl font-semibold text-gray-100 ml-3">Cardio</h2>
+                    </div>
+                    <p class="text-gray-400">Log a cardio workout with duration, distance, and intensity.</p>
+                    <div class="mt-4 text-sm text-gray-500">
+                        Includes: Running, Cycling, Swimming, HIIT, Other
+                    </div>
                 </div>
-            </div>
-
-            <div id="cardio-fields" class="hidden">
-                <div>
-                    <label for="distance" class="block text-sm font-medium text-gray-300">Distance (km)</label>
-                    <input type="number" id="distance" name="distance" min="0" step="0.1"
-                        class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100">
-                </div>
-            </div>
-
-            <div>
-                <label for="notes" class="block text-sm font-medium text-gray-300">Notes</label>
-                <textarea id="notes" name="notes" rows="3"
-                    class="mt-1 block w-full bg-dark-hover border-gray-700 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100 placeholder-gray-400"
-                    placeholder="How did it feel? Any achievements?"></textarea>
-            </div>
-
-            <div class="flex justify-end space-x-4">
-                <a href="{{ url_for('workout.index') }}"
-                    class="inline-flex items-center justify-center px-4 h-10 border border-gray-700 text-sm font-medium rounded-lg text-gray-300 bg-dark-hover hover:bg-dark-surface transition-colors">
-                    Cancel
-                </a>
-                <button type="submit"
-                    class="inline-flex items-center justify-center px-4 h-10 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-                    Log Workout
-                </button>
-            </div>
-        </form>
+            </a>
+        </div>
     </div>
 </div>
-
-{% block extra_js %}
-<script>
-    document.getElementById('type').addEventListener('change', function() {
-        const strengthFields = document.getElementById('strength-fields');
-        const cardioFields = document.getElementById('cardio-fields');
-        
-        strengthFields.classList.add('hidden');
-        cardioFields.classList.add('hidden');
-        
-        // Check if selected type starts with "strength_"
-        if (this.value.startsWith('strength_')) {
-            strengthFields.classList.remove('hidden');
-        } 
-        // Check if selected type starts with "cardio_"
-        else if (this.value.startsWith('cardio_')) {
-            cardioFields.classList.remove('hidden');
-        }
-    });
-</script>
-{% endblock %}
 {% endblock %} 
