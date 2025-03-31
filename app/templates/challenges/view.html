@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ challenge.title }} - Fitness Leveling{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-dark-surface rounded-xl shadow-sm p-6">
+        <!-- Challenge Header -->
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-100">{{ challenge.title }}</h1>
+                <p class="text-gray-400">Created by {{ challenge.creator.username }}</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                {% if challenge.is_public %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/50 text-blue-200">
+                    Public Challenge
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-300">
+                    Private Challenge
+                </span>
+                {% endif %}
+
+                {% if not challenge.get_participant(current_user.id) %}
+                <form action="{{ url_for('challenges.join', challenge_id=challenge.id) }}" method="POST">
+                    <button type="submit"
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700">
+                        Join Challenge
+                    </button>
+                </form>
+                {% elif challenge.creator_id != current_user.id %}
+                <form action="{{ url_for('challenges.leave', challenge_id=challenge.id) }}" method="POST"
+                      onsubmit="return confirm('Are you sure you want to leave this challenge?');">
+                    <button type="submit"
+                            class="inline-flex items-center px-3 py-1.5 border border-gray-700 text-sm font-medium rounded-lg text-gray-300 bg-dark-hover hover:bg-dark-surface">
+                        Leave Challenge
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Challenge Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="space-y-4">
+                <div>
+                    <h2 class="text-sm font-medium text-gray-400">Description</h2>
+                    <p class="mt-1 text-gray-300">{{ challenge.description }}</p>
+                </div>
+                <div>
+                    <h2 class="text-sm font-medium text-gray-400">Goal</h2>
+                    <p class="mt-1 text-gray-300">{{ challenge.goal_value }} {{ challenge.goal_unit }}</p>
+                </div>
+                <div>
+                    <h2 class="text-sm font-medium text-gray-400">Workout Type</h2>
+                    <p class="mt-1 text-gray-300">{{ challenge.workout_type.replace('_', ' ').title() }}</p>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <h2 class="text-sm font-medium text-gray-400">Duration</h2>
+                    <p class="mt-1 text-gray-300">
+                        {{ challenge.start_date.strftime('%B %d, %Y') }} - {{ challenge.end_date.strftime('%B %d, %Y') }}
+                    </p>
+                </div>
+                <div>
+                    <h2 class="text-sm font-medium text-gray-400">Total Participants</h2>
+                    <p class="mt-1 text-gray-300">{{ participant_progress|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div>
+            <h2 class="text-lg font-medium text-gray-100 mb-4">Leaderboard</h2>
+            <div class="space-y-4">
+                {% for participant in participant_progress %}
+                <div class="bg-gray-800/50 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-2xl font-bold text-gray-400">{{ loop.index }}</span>
+                            <div>
+                                <p class="text-gray-100">{{ participant.user.username }}</p>
+                                {% if participant.completed %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-200">
+                                    Completed
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <span class="text-gray-300">{{ "%.1f"|format(participant.progress) }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-800 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: {{ participant.progress }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

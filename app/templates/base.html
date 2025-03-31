@@ -70,6 +70,10 @@
                            class="px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-dark-hover {% if request.endpoint.startswith('workout.') %}text-blue-400 bg-dark-hover{% endif %}">
                             Workouts
                         </a>
+                        <a href="{{ url_for('challenges.index') }}" 
+                           class="px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-dark-hover {% if request.endpoint.startswith('challenges.') %}text-blue-400 bg-dark-hover{% endif %}">
+                            Challenges
+                        </a>
                         <a href="{{ url_for('friends.index') }}" 
                            class="px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-dark-hover {% if request.endpoint.startswith('friends.') %}text-blue-400 bg-dark-hover{% endif %}">
                             Friends
@@ -139,12 +143,12 @@
                 </svg>
                 <span class="text-xs mt-1">Workouts</span>
             </a>
-            <a href="{{ url_for('workout.new') }}"
-               class="flex flex-col items-center justify-center w-full text-gray-300 hover:text-blue-400">
+            <a href="{{ url_for('challenges.index') }}"
+               class="flex flex-col items-center justify-center w-full text-gray-300 hover:text-blue-400 {% if request.endpoint.startswith('challenges.') %}text-blue-400{% endif %}">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <span class="text-xs mt-1">New</span>
+                <span class="text-xs mt-1">Challenges</span>
             </a>
             <a href="{{ url_for('friends.index') }}"
                class="flex flex-col items-center justify-center w-full text-gray-300 hover:text-blue-400 {% if request.endpoint.startswith('friends.') %}text-blue-400{% endif %}">
