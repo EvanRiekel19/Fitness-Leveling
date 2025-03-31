@@ -68,19 +68,34 @@ def view(challenge_id):
     participant_progress = []
     for participant in participants:
         progress_data = challenge.calculate_progress(participant.user_id)
+        
         # Get workout count for this participant in the challenge period
-        workout_count = db.session.execute("""
+        # Handle different workout type mappings
+        workout_type_filter = ""
+        workout_params = {
+            'user_id': participant.user_id,
+            'start_date': challenge.start_date,
+            'end_date': challenge.end_date
+        }
+        
+        if challenge.workout_type == 'cardio':
+            workout_type_filter = "type = 'cardio'"
+        elif challenge.workout_type == 'strength':
+            workout_type_filter = "type = 'strength'"
+        elif challenge.workout_type.startswith('strength_'):
+            # For specific strength workout types (e.g., strength_upper, strength_push)
+            workout_type_filter = "(type = 'strength' AND subtype = :subtype)"
+            workout_params['subtype'] = challenge.workout_type
+        
+        query = f"""
             SELECT COUNT(*) 
             FROM workout 
             WHERE user_id = :user_id 
-            AND type = :workout_type
+            AND {workout_type_filter}
             AND created_at BETWEEN :start_date AND :end_date
-        """, {
-            'user_id': participant.user_id,
-            'workout_type': challenge.workout_type,
-            'start_date': challenge.start_date,
-            'end_date': challenge.end_date
-        }).scalar()
+        """
+        
+        workout_count = db.session.execute(query, workout_params).scalar()
         
         participant_progress.append({
             'user': participant.user,
