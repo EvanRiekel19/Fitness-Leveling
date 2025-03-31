@@ -91,116 +91,95 @@ def get_workout_history(workout_type, user_id):
     """Get previous workout data and PRs for a specific workout type."""
     try:
         print(f"\nDEBUG: Getting workout history for type: {workout_type}")
-        # Get the last 5 workouts of this type, handling both old and new format
-        name_pattern = '%' + workout_type.replace('strength_', '').replace('_', ' ') + '%'
-        print(f"DEBUG: Using name pattern: {name_pattern}")
         
-        # First, let's see what workouts exist
+        # First, let's see what workouts exist with their exact types/subtypes
         all_workouts = db.session.execute("""
-            SELECT id, name, subtype, type
-            FROM workout
+            SELECT id, name, type, subtype, date
+            FROM workout 
             WHERE user_id = :user_id
+            AND (
+                type = 'strength' 
+                OR subtype LIKE '%push%'
+                OR subtype LIKE '%pull%'
+                OR subtype LIKE '%legs%'
+                OR name LIKE '%push%'
+                OR name LIKE '%pull%'
+                OR name LIKE '%legs%'
+            )
             ORDER BY date DESC
             LIMIT 10
         """, {'user_id': user_id}).fetchall()
         
-        print("\nDEBUG: Recent workouts in system:")
+        print("\nDEBUG: Recent strength/split workouts in system:")
         for w in all_workouts:
-            print(f"ID: {w[0]}, Name: {w[1]}, Subtype: {w[2]}, Type: {w[3]}")
+            print(f"ID: {w[0]}, Name: {w[1]}, Type: {w[2]}, Subtype: {w[3]}, Date: {w[4]}")
         
-        # Now get the matching workouts
+        # Now get the matching workouts with expanded matching criteria
         workouts = db.session.execute("""
-            SELECT id, name, duration, intensity, date, notes
+            SELECT id, name, duration, intensity, date, notes, type, subtype
             FROM workout
             WHERE user_id = :user_id 
             AND (
                 subtype = :workout_type 
-                OR (subtype IS NULL AND type = 'strength' AND name ILIKE :name_pattern)
+                OR subtype LIKE :like_pattern
+                OR (subtype IS NULL AND type = 'strength' AND (
+                    name ILIKE :name_pattern
+                    OR name ILIKE :alt_pattern
+                ))
             )
             ORDER BY date DESC
             LIMIT 5
         """, {
-            'workout_type': workout_type, 
+            'workout_type': workout_type,
             'user_id': user_id,
-            'name_pattern': name_pattern
+            'like_pattern': f'%{workout_type.replace("strength_", "")}%',
+            'name_pattern': f'%{workout_type.replace("strength_", "").replace("_", " ")}%',
+            'alt_pattern': f'%{workout_type.replace("strength_", "").replace("_", "")}%'
         }).fetchall()
         
         print(f"\nDEBUG: Found {len(workouts) if workouts else 0} matching workouts")
         for w in (workouts or []):
-            print(f"Matching workout - ID: {w[0]}, Name: {w[1]}, Date: {w[4]}")
+            print(f"Matching workout - ID: {w[0]}, Name: {w[1]}, Date: {w[4]}, Type: {w[6]}, Subtype: {w[7]}")
         
         if not workouts:
             print("DEBUG: No matching workouts found")
             return None
             
-        history = []
-        for workout in workouts:
-            # Get exercises for this workout
-            exercises = db.session.execute("""
-                SELECT e.id, e.name, 
-                       COUNT(DISTINCT es.id) as total_sets,
-                       MAX(es.weight) as max_weight,
-                       MAX(es.reps) as max_reps,
-                       SUM(es.weight * es.reps) as total_volume
-                FROM exercise e
-                LEFT JOIN exercise_set es ON e.id = es.exercise_id
-                WHERE e.workout_id = :workout_id
-                GROUP BY e.id, e.name
-            """, {'workout_id': workout[0]}).fetchall()
-            
-            history.append({
-                'id': workout[0],
-                'name': workout[1],
-                'duration': workout[2],
-                'intensity': workout[3],
-                'date': workout[4],
-                'notes': workout[5],
+        # Process the most recent workout
+        last_workout = workouts[0]
+        workout_id = last_workout[0]
+        
+        # Get exercises for this workout
+        exercises = db.session.execute("""
+            SELECT e.id, e.name, COUNT(s.id) as total_sets,
+                   MAX(s.weight) as max_weight,
+                   MAX(CASE WHEN s.weight = MAX(s.weight) OVER (PARTITION BY e.id) THEN s.reps END) as max_reps
+            FROM exercise e
+            LEFT JOIN exercise_set s ON e.id = s.exercise_id
+            WHERE e.workout_id = :workout_id
+            GROUP BY e.id, e.name
+            ORDER BY e.id
+        """, {'workout_id': workout_id}).fetchall()
+        
+        # Format the response
+        return {
+            'last_workout': {
+                'id': last_workout[0],
+                'name': last_workout[1],
+                'duration': last_workout[2],
+                'intensity': last_workout[3],
+                'date': last_workout[4],
+                'notes': last_workout[5],
                 'exercises': [{
                     'name': ex[1],
                     'total_sets': ex[2],
                     'max_weight': ex[3],
-                    'max_reps': ex[4],
-                    'total_volume': ex[5]
+                    'max_reps': ex[4]
                 } for ex in exercises]
-            })
-        
-        # Calculate overall stats
-        total_volume = 0
-        max_duration = 0
-        avg_intensity = 0
-        exercise_frequency = {}
-        
-        for workout in history:
-            total_volume += sum(ex['total_volume'] or 0 for ex in workout['exercises'])
-            max_duration = max(max_duration, workout['duration'] or 0)
-            avg_intensity += workout['intensity'] or 0
-            
-            for ex in workout['exercises']:
-                if ex['name'] not in exercise_frequency:
-                    exercise_frequency[ex['name']] = 0
-                exercise_frequency[ex['name']] += 1
-        
-        avg_intensity = avg_intensity / len(history) if history else 0
-        
-        # Sort exercises by frequency
-        common_exercises = sorted(
-            exercise_frequency.items(), 
-            key=lambda x: x[1], 
-            reverse=True
-        )[:5]  # Top 5 most common
-        
-        return {
-            'history': history,
-            'stats': {
-                'total_volume': total_volume,
-                'max_duration': max_duration,
-                'avg_intensity': round(avg_intensity, 1),
-                'common_exercises': common_exercises
-            },
-            'last_workout': history[0] if history else None
+            }
         }
     except Exception as e:
-        print(f"Error getting workout history: {e}")
+        print(f"Error in get_workout_history: {str(e)}")
         return None
 
 @bp.route('/workouts/new/strength', methods=['GET', 'POST'])
