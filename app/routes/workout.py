@@ -439,3 +439,54 @@ def view(workout_id):
         print(traceback.format_exc())
         flash('Error loading workout details. Please try again.', 'error')
         return redirect(url_for('workout.index'))
+
+@bp.route('/api/workouts/last/<workout_type>')
+@login_required
+def get_last_workout(workout_type):
+    """Get the last workout of a specific type."""
+    try:
+        # Get the last workout of this type
+        workout = db.session.execute("""
+            SELECT id, name, duration, intensity, date, notes
+            FROM workout
+            WHERE user_id = :user_id AND subtype = :workout_type
+            ORDER BY date DESC
+            LIMIT 1
+        """, {'workout_type': workout_type, 'user_id': current_user.id}).fetchone()
+        
+        if not workout:
+            return jsonify({'last_workout': None})
+            
+        # Get exercises for this workout
+        exercises = db.session.execute("""
+            SELECT e.id, e.name, 
+                   COUNT(DISTINCT es.id) as total_sets,
+                   MAX(es.weight) as max_weight,
+                   MAX(es.reps) as max_reps,
+                   SUM(es.weight * es.reps) as total_volume
+            FROM exercise e
+            LEFT JOIN exercise_set es ON e.id = es.exercise_id
+            WHERE e.workout_id = :workout_id
+            GROUP BY e.id, e.name
+        """, {'workout_id': workout[0]}).fetchall()
+        
+        workout_data = {
+            'id': workout[0],
+            'name': workout[1],
+            'duration': workout[2],
+            'intensity': workout[3],
+            'date': workout[4].isoformat() if workout[4] else None,
+            'notes': workout[5],
+            'exercises': [{
+                'name': ex[1],
+                'total_sets': ex[2],
+                'max_weight': ex[3],
+                'max_reps': ex[4],
+                'total_volume': ex[5]
+            } for ex in exercises]
+        }
+        
+        return jsonify({'last_workout': workout_data})
+    except Exception as e:
+        print(f"Error getting last workout: {e}")
+        return jsonify({'error': str(e)}), 500
