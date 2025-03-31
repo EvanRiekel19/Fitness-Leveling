@@ -222,8 +222,8 @@
     // Global variables
     let exerciseCounter = 0;
     const exercisesData = [];
-    const exerciseHistory = {{ exercise_history|tojson|safe }};
-    const workoutHistory = {{ workout_history|tojson|safe }};
+    const exerciseHistory = {{ exercise_history|default({})|tojson|safe }};
+    const workoutHistory = {{ workout_history|default({})|tojson|safe }};
     
     // DOM Elements
     const exercisesContainer = document.getElementById('exercises-container');

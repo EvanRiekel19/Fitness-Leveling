@@ -90,14 +90,18 @@ def get_exercise_history(exercise_name, user_id):
 def get_workout_history(workout_type, user_id):
     """Get previous workout data and PRs for a specific workout type."""
     try:
+        print(f"DEBUG: Getting workout history for type: {workout_type}")
         # Get the last 5 workouts of this type
         workouts = db.session.execute("""
             SELECT id, name, duration, intensity, date, notes
             FROM workout
-            WHERE user_id = :user_id AND subtype = :workout_type
+            WHERE user_id = :user_id 
+            AND (subtype = :workout_type OR (subtype IS NULL AND type = 'strength'))
             ORDER BY date DESC
             LIMIT 5
         """, {'workout_type': workout_type, 'user_id': user_id}).fetchall()
+        
+        print(f"DEBUG: Found {len(workouts) if workouts else 0} workouts")
         
         if not workouts:
             return None
@@ -445,14 +449,18 @@ def view(workout_id):
 def get_last_workout(workout_type):
     """Get the last workout of a specific type."""
     try:
+        print(f"DEBUG API: Getting last workout for type: {workout_type}")
         # Get the last workout of this type
         workout = db.session.execute("""
             SELECT id, name, duration, intensity, date, notes
             FROM workout
-            WHERE user_id = :user_id AND subtype = :workout_type
+            WHERE user_id = :user_id 
+            AND (subtype = :workout_type OR (subtype IS NULL AND type = 'strength'))
             ORDER BY date DESC
             LIMIT 1
         """, {'workout_type': workout_type, 'user_id': current_user.id}).fetchone()
+        
+        print(f"DEBUG API: Found workout: {workout is not None}")
         
         if not workout:
             return jsonify({'last_workout': None})
