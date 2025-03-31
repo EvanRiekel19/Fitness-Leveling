@@ -47,7 +47,14 @@ class Challenge(db.Model):
         total = 0
         for workout in workouts:
             if self.goal_type == 'distance':
-                total += workout.distance or 0
+                # Convert distance based on goal unit
+                if workout.distance:
+                    if self.goal_unit == 'miles':
+                        # Workout distance is in km, convert to miles
+                        total += workout.distance * 0.621371
+                    else:
+                        # Keep as kilometers
+                        total += workout.distance
             elif self.goal_type == 'workouts':
                 total += 1
             # Add more goal types as needed
