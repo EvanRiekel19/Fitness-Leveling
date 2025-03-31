@@ -639,17 +639,21 @@
     // Function to update previous workout info
     function updatePreviousWorkout() {
         const workoutType = document.getElementById('subtype').value;
-        const history = workoutHistory[workoutType];
+        console.log('Updating previous workout for type:', workoutType);
+        console.log('Available history:', workoutHistory);
         
+        const history = workoutHistory[workoutType];
         const noPrevWorkout = document.getElementById('no-previous-workout');
         const prevWorkoutDetails = document.getElementById('previous-workout-details');
         
         if (!history || !history.last_workout) {
+            console.log('No history found for type:', workoutType);
             noPrevWorkout.classList.remove('hidden');
             prevWorkoutDetails.classList.add('hidden');
             return;
         }
         
+        console.log('Found history:', history);
         const workout = history.last_workout;
         
         // Update the workout details
@@ -677,11 +681,13 @@
     
     // Add event listener for workout type change
     document.getElementById('subtype').addEventListener('change', function() {
+        console.log('Workout type changed to:', this.value);
         updatePreviousWorkout();
     });
     
     // Call on page load
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Page loaded, initializing previous workout display');
         updatePreviousWorkout();
     });
 </script>

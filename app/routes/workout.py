@@ -298,26 +298,20 @@ def new_strength():
             print(traceback.format_exc())
             flash(f'Error logging workout: {str(e)}', 'error')
             return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
-    
-    # For GET requests, get exercise history for all exercises
-    exercise_history = {}
-    for exercise_name in get_exercise_options():
-        history = get_exercise_history(exercise_name, current_user.id)
-        if history:
-            exercise_history[exercise_name] = history
-    
-    # Get workout history for each type
-    workout_history = {}
-    for workout_type in ['strength_upper', 'strength_lower', 'strength_push', 
-                        'strength_pull', 'strength_full', 'strength_other']:
-        history = get_workout_history(workout_type, current_user.id)
-        if history:
-            workout_history[workout_type] = history
-    
-    return render_template('workout/new_strength.html', 
-                         exercise_options=get_exercise_options(),
-                         exercise_history=exercise_history,
-                         workout_history=workout_history)
+    else:  # GET request
+        # Get workout history for all strength workout types
+        workout_history = {}
+        for workout_type in ['strength_upper', 'strength_lower', 'strength_push', 'strength_pull', 'strength_full', 'strength_other']:
+            history = get_workout_history(workout_type, current_user.id)
+            if history:
+                workout_history[workout_type] = history
+        
+        # Get exercise options and render template
+        return render_template(
+            'workout/new_strength.html',
+            exercise_options=get_exercise_options(),
+            workout_history=workout_history
+        )
 
 # Helper function to get exercise options
 def get_exercise_options():
