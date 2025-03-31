@@ -81,7 +81,8 @@ def view(challenge_id):
         if challenge.workout_type == 'cardio':
             workout_type_filter = "type = 'cardio'"
         elif challenge.workout_type == 'strength':
-            workout_type_filter = "type = 'strength'"
+            # For strength challenges, include all strength workout types
+            workout_type_filter = "type LIKE 'strength%'"
         elif challenge.workout_type.startswith('strength_'):
             # For specific strength workout types (e.g., strength_upper, strength_push)
             workout_type_filter = "(type = 'strength' AND subtype = :subtype)"
