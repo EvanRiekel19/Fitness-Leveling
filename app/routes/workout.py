@@ -613,10 +613,14 @@ def edit(id):
     exercises_json = json.dumps(exercises)
     
     # Get exercise history for this user
-    exercise_history = get_exercise_history(current_user.id)
+    exercise_history = {}
+    for exercise in workout.exercises:
+        history = get_exercise_history(exercise.name, current_user.id)
+        if history:
+            exercise_history[exercise.name] = history
     
     # Get workout history for this user
-    workout_history = get_workout_history(current_user.id)
+    workout_history = get_workout_history(workout.subtype or 'strength_full', current_user.id)
     
     return render_template('workout/new_strength.html', 
                          workout=workout,
