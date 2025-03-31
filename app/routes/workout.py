@@ -395,7 +395,7 @@ def view(workout_id):
                     
                     print(f"DEBUG: Found {len(set_rows)} sets")
                     
-                    # Create exercise object with explicit ordering
+                    # Create exercise object
                     exercise = {
                         'model': {
                             'id': ex_id,
@@ -404,10 +404,9 @@ def view(workout_id):
                         'ordered_sets': []
                     }
                     
-                    # Add all sets to this exercise with explicit set number handling
+                    # Add all sets to this exercise
                     for set_row in set_rows:
                         set_number = set_row[2]  # Get the set number from the database
-                        # Create a set dictionary
                         exercise_set = {
                             'id': set_row[0],
                             'set_number': set_number,
@@ -415,18 +414,16 @@ def view(workout_id):
                             'weight': set_row[4],
                             'notes': set_row[5] if set_row[5] else ''
                         }
-                        # Ensure we have the right index in the list
-                        while len(exercise['ordered_sets']) < set_number:
-                            exercise['ordered_sets'].append(None)
-                        exercise['ordered_sets'][set_number - 1] = exercise_set
-                        print(f"DEBUG: Added set {set_number}: {exercise_set['reps']} reps at {exercise_set['weight']}kg")
+                        print(f"DEBUG: Processing set {set_number}: {exercise_set['reps']} reps at {exercise_set['weight']}kg")
+                        exercise['ordered_sets'].append(exercise_set)
                     
-                    # Remove any None values from the list
-                    exercise['ordered_sets'] = [s for s in exercise['ordered_sets'] if s is not None]
+                    # Sort sets by set number to ensure correct order
+                    exercise['ordered_sets'].sort(key=lambda x: x['set_number'])
                     
                     # Add this exercise to our list
                     exercises.append(exercise)
                     print(f"DEBUG: Added exercise {ex_name} with {len(exercise['ordered_sets'])} sets")
+                    print("DEBUG: Set numbers:", [s['set_number'] for s in exercise['ordered_sets']])
             
             except Exception as e:
                 import traceback

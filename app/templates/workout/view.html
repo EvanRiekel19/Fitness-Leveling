@@ -117,7 +117,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for set in exercise_data.ordered_sets|sort(attribute='set_number') %}
+                                {% for set in exercise_data.ordered_sets %}
                                 <tr class="border-t border-gray-800">
                                     <td class="p-2">{{ set.set_number }}</td>
                                     <td class="p-2">{{ "%.1f"|format(set.weight) if set.weight else '--' }}</td>

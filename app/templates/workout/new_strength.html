@@ -536,42 +536,44 @@
             
             if (exerciseIndex !== -1) {
                 exercisesData[exerciseIndex].name = exerciseName;
+                exercisesData[exerciseIndex].sets = [];  // Reset sets array
                 
                 // Update set data
-                const setRows = card.querySelectorAll('.set-row');
-                setRows.forEach(row => {
-                    const setNumber = parseInt(row.dataset.setNumber);
+                const setRows = Array.from(card.querySelectorAll('.set-row'));
+                // Sort by set number to ensure correct order
+                setRows.sort((a, b) => parseInt(a.dataset.setNumber) - parseInt(b.dataset.setNumber));
+                
+                // Rebuild sets array with sequential numbers starting at 1
+                setRows.forEach((row, index) => {
+                    const setNumber = index + 1;  // Ensure sequential numbering
                     const weight = row.querySelector('.set-weight').value;
                     const reps = row.querySelector('.set-reps').value;
                     const notes = row.querySelector('.set-notes').value;
                     
-                    const setIndex = exercisesData[exerciseIndex].sets.findIndex(set => set.setNumber === setNumber);
-                    if (setIndex !== -1) {
-                        exercisesData[exerciseIndex].sets[setIndex] = {
-                            setNumber,
-                            weight,
-                            reps,
-                            notes
-                        };
-                    }
+                    exercisesData[exerciseIndex].sets.push({
+                        setNumber: setNumber,
+                        weight: weight,
+                        reps: reps,
+                        notes: notes
+                    });
+                    
+                    // Update the displayed set number
+                    row.dataset.setNumber = setNumber;
+                    row.querySelector('.set-number').textContent = setNumber;
                 });
             }
         });
         
         // Update hidden input with JSON data
-        // We need to clean up the data to remove the ID fields which are only used client-side
-        const cleanData = exercisesData.map(exercise => {
-            const sortedSets = exercise.sets.sort((a, b) => a.setNumber - b.setNumber);
-            return {
-                name: exercise.name,
-                sets: sortedSets.map(set => ({
-                    reps: set.reps,
-                    weight: set.weight,
-                    notes: set.notes,
-                    set_number: set.setNumber
-                }))
-            };
-        });
+        const cleanData = exercisesData.map(exercise => ({
+            name: exercise.name,
+            sets: exercise.sets.map(set => ({
+                set_number: set.setNumber,  // Ensure set_number is included
+                reps: set.reps,
+                weight: set.weight,
+                notes: set.notes
+            }))
+        }));
         
         exercisesDataInput.value = JSON.stringify(cleanData);
         updateSubmitButtonState();
