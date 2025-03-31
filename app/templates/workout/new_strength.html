@@ -127,6 +127,11 @@
                     Add Set
                 </button>
             </div>
+            
+            <!-- Exercise History and PRs -->
+            <div class="exercise-history mt-3 text-xs space-y-2">
+                <!-- Will be populated by JavaScript -->
+            </div>
         </div>
         
         <div class="sets-container">
@@ -194,6 +199,7 @@
     // Global variables
     let exerciseCounter = 0;
     const exercisesData = [];
+    const exerciseHistory = {{ exercise_history|tojson|safe }};
     
     // DOM Elements
     const exercisesContainer = document.getElementById('exercises-container');
@@ -210,6 +216,97 @@
         document.getElementById('strength-workout-form').addEventListener('submit', prepareFormSubmission);
         updateSubmitButtonState();
     });
+    
+    // Function to format date
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            year: 'numeric'
+        });
+    }
+    
+    // Function to update exercise history display
+    function updateExerciseHistory(exerciseCard, exerciseName) {
+        const historyDiv = exerciseCard.querySelector('.exercise-history');
+        const history = exerciseHistory[exerciseName];
+        
+        if (!history) {
+            historyDiv.innerHTML = '<p class="text-gray-400 italic">No previous history</p>';
+            return;
+        }
+        
+        // Show PRs
+        const prs = history.prs;
+        let html = `
+            <div class="bg-blue-900/20 p-2 rounded text-blue-200">
+                <div class="font-medium">Personal Records:</div>
+                <div class="grid grid-cols-3 gap-2 mt-1">
+                    <div>Max Weight: ${prs.max_weight}kg</div>
+                    <div>Max Reps: ${prs.max_reps}</div>
+                    <div>Max Volume: ${prs.max_volume}kg</div>
+                </div>
+            </div>
+        `;
+        
+        // Show last workout
+        if (history.last_workout) {
+            html += `
+                <div class="text-gray-400 mt-2">
+                    Last done: ${formatDate(history.last_workout)}
+                </div>
+            `;
+        }
+        
+        // Show last workout sets
+        if (history.history && history.history.length > 0) {
+            const lastWorkout = history.history[0];
+            html += `
+                <div class="mt-2">
+                    <div class="text-gray-400 mb-1">Last workout sets:</div>
+                    <div class="space-y-1">
+                        ${lastWorkout.sets.map(set => `
+                            <div class="text-xs text-gray-300">
+                                Set ${set.set_number}: ${set.weight}kg × ${set.reps} reps
+                                ${set.notes ? `<span class="text-gray-400">(${set.notes})</span>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        historyDiv.innerHTML = html;
+    }
+    
+    // Function to create a new exercise card
+    function createExerciseCard() {
+        const template = document.getElementById('exercise-template');
+        const exerciseCard = template.content.cloneNode(true);
+        
+        // Set unique ID
+        exerciseCard.querySelector('.exercise-card').dataset.exerciseId = `exercise-${exerciseCounter++}`;
+        
+        // Add event listeners
+        const exerciseNameInput = exerciseCard.querySelector('.exercise-name');
+        exerciseNameInput.addEventListener('change', function() {
+            updateExerciseHistory(this.closest('.exercise-card'), this.value);
+        });
+        
+        // Add remove button listener
+        exerciseCard.querySelector('.remove-exercise-btn').addEventListener('click', function() {
+            this.closest('.exercise-card').remove();
+            updateExercisesData();
+        });
+        
+        // Add set button listener
+        exerciseCard.querySelector('.add-set-btn').addEventListener('click', function() {
+            addSetToExercise(this.closest('.exercise-card'));
+        });
+        
+        return exerciseCard;
+    }
     
     // Add a new exercise card
     function addExercise() {

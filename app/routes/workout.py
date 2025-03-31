@@ -98,7 +98,74 @@ def new():
     
     return render_template('workout/new.html')
 
-# New route for detailed strength workout entry
+def get_exercise_history(exercise_name, user_id):
+    """Get previous workout data and PRs for a specific exercise."""
+    try:
+        # Get all exercises with this name for the user
+        exercises = db.session.execute("""
+            SELECT e.id, e.workout_id, e.name, w.date
+            FROM exercise e
+            JOIN workout w ON e.workout_id = w.id
+            WHERE e.name = :exercise_name AND w.user_id = :user_id
+            ORDER BY w.date DESC
+            LIMIT 5
+        """, {'exercise_name': exercise_name, 'user_id': user_id}).fetchall()
+        
+        if not exercises:
+            return None
+            
+        # Get sets for each exercise
+        history = []
+        for ex in exercises:
+            sets = db.session.execute("""
+                SELECT set_number, reps, weight, notes
+                FROM exercise_set
+                WHERE exercise_id = :exercise_id
+                ORDER BY set_number
+            """, {'exercise_id': ex[0]}).fetchall()
+            
+            history.append({
+                'date': ex[3],
+                'sets': [{
+                    'set_number': s[0],
+                    'reps': s[1],
+                    'weight': s[2],
+                    'notes': s[3]
+                } for s in sets]
+            })
+            
+        # Calculate PRs
+        prs = {
+            'max_weight': 0,
+            'max_reps': 0,
+            'max_volume': 0  # weight * reps
+        }
+        
+        for workout in history:
+            for set_data in workout['sets']:
+                if set_data['weight'] and set_data['reps']:
+                    # Update max weight
+                    if set_data['weight'] > prs['max_weight']:
+                        prs['max_weight'] = set_data['weight']
+                    
+                    # Update max reps
+                    if set_data['reps'] > prs['max_reps']:
+                        prs['max_reps'] = set_data['reps']
+                    
+                    # Update max volume
+                    volume = set_data['weight'] * set_data['reps']
+                    if volume > prs['max_volume']:
+                        prs['max_volume'] = volume
+        
+        return {
+            'history': history,
+            'prs': prs,
+            'last_workout': history[0]['date'] if history else None
+        }
+    except Exception as e:
+        print(f"Error getting exercise history: {e}")
+        return None
+
 @bp.route('/workouts/new/strength', methods=['GET', 'POST'])
 @login_required
 def new_strength():
@@ -222,7 +289,16 @@ def new_strength():
             flash(f'Error logging workout: {str(e)}', 'error')
             return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
     
-    return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
+    # For GET requests, get exercise history for all exercises
+    exercise_history = {}
+    for exercise_name in get_exercise_options():
+        history = get_exercise_history(exercise_name, current_user.id)
+        if history:
+            exercise_history[exercise_name] = history
+    
+    return render_template('workout/new_strength.html', 
+                         exercise_options=get_exercise_options(),
+                         exercise_history=exercise_history)
 
 # Helper function to get exercise options
 def get_exercise_options():
