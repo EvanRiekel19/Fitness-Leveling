@@ -350,6 +350,7 @@ def view(workout_id):
     # Get the workout
     try:
         workout = Workout.query.get_or_404(workout_id)
+        print(f"\nDEBUG: Loading workout {workout_id}")
         
         # Security check
         if workout.user_id != current_user.id:
@@ -361,27 +362,28 @@ def view(workout_id):
         
         # Only get exercises for strength workouts
         if workout.type == 'strength':
-            # Get all exercises for this workout using raw SQL with proper parameters
+            print(f"DEBUG: Processing strength workout")
             try:
-                # Get all exercises
+                # Get all exercises using parameterized query
                 exercise_sql = """
                     SELECT id, workout_id, name 
                     FROM exercise 
                     WHERE workout_id = :workout_id
+                    ORDER BY id
                 """
                 exercises_result = db.session.execute(exercise_sql, {"workout_id": workout_id})
                 exercise_rows = exercises_result.fetchall()
                 
-                print(f"Found {len(exercise_rows)} exercises for workout {workout_id}")
+                print(f"DEBUG: Found {len(exercise_rows)} exercises")
                 
                 # Process each exercise
                 for ex_row in exercise_rows:
                     ex_id = ex_row[0]
                     ex_name = ex_row[2]
                     
-                    print(f"Processing exercise {ex_id}: {ex_name}")
+                    print(f"\nDEBUG: Processing exercise {ex_id}: {ex_name}")
                     
-                    # Get all sets for this exercise using SQL
+                    # Get all sets for this exercise using parameterized query
                     sets_sql = """
                         SELECT id, exercise_id, set_number, reps, weight, notes
                         FROM exercise_set
@@ -391,7 +393,7 @@ def view(workout_id):
                     sets_result = db.session.execute(sets_sql, {"exercise_id": ex_id})
                     set_rows = sets_result.fetchall()
                     
-                    print(f"Found {len(set_rows)} sets for exercise {ex_name}")
+                    print(f"DEBUG: Found {len(set_rows)} sets")
                     
                     # Create exercise object
                     exercise = {
@@ -413,18 +415,25 @@ def view(workout_id):
                             'notes': set_row[5] if set_row[5] else ''
                         }
                         exercise['ordered_sets'].append(exercise_set)
-                        print(f"  Added set {exercise_set['set_number']}: {exercise_set['reps']} reps at {exercise_set['weight']}kg")
+                        print(f"DEBUG: Added set {exercise_set['set_number']}: {exercise_set['reps']} reps at {exercise_set['weight']}kg")
                     
                     # Add this exercise to our list
                     exercises.append(exercise)
+                    print(f"DEBUG: Added exercise {ex_name} with {len(exercise['ordered_sets'])} sets")
             
             except Exception as e:
                 import traceback
-                print(f"Error fetching exercises: {e}")
+                print(f"ERROR fetching exercises: {e}")
                 print(traceback.format_exc())
                 # Don't fail completely - continue with empty exercises list
         
         # Render the template with all our data
+        print("\nDEBUG: Final data:")
+        print(f"Workout: {workout.name}")
+        print(f"Total exercises: {len(exercises)}")
+        for ex in exercises:
+            print(f"Exercise {ex['model']['name']}: {len(ex['ordered_sets'])} sets")
+        
         return render_template('workout/view.html', workout=workout, exercises=exercises)
     
     except Exception as e:
