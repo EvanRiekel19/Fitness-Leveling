@@ -48,14 +48,17 @@
                 </div>
 
                 <!-- Progress Bar -->
-                {% set progress = challenge.calculate_progress(current_user.id) %}
+                {% set progress_data = challenge.calculate_progress(current_user.id) %}
                 <div class="space-y-1">
                     <div class="flex justify-between items-center text-xs text-gray-400">
                         <span>Progress</span>
-                        <span>{{ "%.1f"|format(progress) }}%</span>
+                        <div class="text-right">
+                            <span>{{ "%.1f"|format(progress_data.current_value) }} / {{ challenge.goal_value }} {{ challenge.goal_unit }}</span>
+                            <span class="ml-2">({{ "%.1f"|format(progress_data.progress) }}%)</span>
+                        </div>
                     </div>
                     <div class="w-full bg-gray-800 rounded-full h-2">
-                        <div class="bg-blue-600 h-2 rounded-full" style="width: {{ progress }}%"></div>
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: {{ progress_data.progress }}%"></div>
                     </div>
                 </div>
 
