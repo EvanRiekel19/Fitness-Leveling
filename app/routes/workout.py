@@ -94,7 +94,7 @@ def get_workout_history(workout_type, user_id):
         
         # First, let's see what workouts exist with their exact types/subtypes
         all_workouts = db.session.execute("""
-            SELECT id, name, type, subtype, date
+            SELECT id, name, type, subtype, created_at
             FROM workout 
             WHERE user_id = :user_id
             AND (
@@ -106,7 +106,7 @@ def get_workout_history(workout_type, user_id):
                 OR name LIKE '%pull%'
                 OR name LIKE '%legs%'
             )
-            ORDER BY date DESC
+            ORDER BY created_at DESC
             LIMIT 10
         """, {'user_id': user_id}).fetchall()
         
@@ -116,7 +116,7 @@ def get_workout_history(workout_type, user_id):
         
         # Now get the matching workouts with expanded matching criteria
         workouts = db.session.execute("""
-            SELECT id, name, duration, intensity, date, notes, type, subtype
+            SELECT id, name, duration, intensity, created_at, notes, type, subtype
             FROM workout
             WHERE user_id = :user_id 
             AND (
@@ -127,7 +127,7 @@ def get_workout_history(workout_type, user_id):
                     OR name ILIKE :alt_pattern
                 ))
             )
-            ORDER BY date DESC
+            ORDER BY created_at DESC
             LIMIT 5
         """, {
             'workout_type': workout_type,
@@ -180,6 +180,7 @@ def get_workout_history(workout_type, user_id):
         }
     except Exception as e:
         print(f"Error in get_workout_history: {str(e)}")
+        db.session.rollback()  # Add rollback to handle transaction errors
         return None
 
 @bp.route('/workouts/new/strength', methods=['GET', 'POST'])
