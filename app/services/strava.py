@@ -1,10 +1,3 @@
-try:
-    from stravalib import Client
-    STRAVA_AVAILABLE = True
-except ImportError:
-    STRAVA_AVAILABLE = False
-    Client = None
-
 from datetime import datetime, timedelta
 from app import db
 from app.models.workout import Workout
@@ -12,14 +5,25 @@ from app.models.user import User
 
 class StravaService:
     def __init__(self, client_id, client_secret):
-        if not STRAVA_AVAILABLE:
-            raise ImportError("stravalib package is not installed")
-        self.client = Client()
-        self.client_id = client_id
-        self.client_secret = client_secret
+        try:
+            from stravalib import Client
+            self.client = Client()
+            self.client_id = client_id
+            self.client_secret = client_secret
+            self._strava_available = True
+        except ImportError:
+            self._strava_available = False
+            self.client = None
+            self.client_id = None
+            self.client_secret = None
+
+    def is_available(self):
+        return self._strava_available
 
     def get_authorization_url(self, redirect_uri):
         """Generate the authorization URL for Strava OAuth."""
+        if not self._strava_available:
+            raise ImportError("stravalib package is not installed")
         print(f"Generating auth URL with redirect URI: {redirect_uri}")
         return self.client.authorization_url(
             client_id=self.client_id,
