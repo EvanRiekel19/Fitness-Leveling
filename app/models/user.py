@@ -51,22 +51,22 @@ class User(UserMixin, db.Model):
     )
     
     @property
-    def total_workouts(self):
+    def computed_total_workouts(self):
         """Calculate total number of workouts."""
         return self.workouts.count()
 
     @property
-    def total_distance(self):
+    def computed_total_distance(self):
         """Calculate total distance in kilometers."""
         return sum(workout.distance or 0 for workout in self.workouts)
 
     @property
-    def total_duration(self):
+    def computed_total_duration(self):
         """Calculate total duration in minutes."""
         return sum(workout.duration or 0 for workout in self.workouts)
 
     @property
-    def total_calories(self):
+    def computed_total_calories(self):
         """Calculate total calories burned."""
         return sum(workout.calories or 0 for workout in self.workouts)
     
@@ -290,10 +290,19 @@ class User(UserMixin, db.Model):
             return xp_to_lose
         return 0
     
+    def update_stats(self):
+        """Update stored stats from computed values."""
+        self.total_workouts = self.computed_total_workouts
+        self.total_distance = self.computed_total_distance
+        self.total_duration = self.computed_total_duration
+        self.total_calories = self.computed_total_calories
+        db.session.commit()
+
     def update_last_workout(self):
         """Update the last workout timestamp."""
         try:
             self.last_workout_date = datetime.utcnow()
+            self.update_stats()  # Update stats when workout is added
             db.session.commit()
         except Exception as e:
             # If the column doesn't exist, silently fail
