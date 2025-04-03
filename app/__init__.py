@@ -103,12 +103,12 @@ def create_app(test_config=None):
             return "Internal Server Error", 500
     
     # Register blueprints
-    from app.routes import auth, main, workout, profile, strava, friends, challenges
+    from app.routes import auth, main, workout, profile, friends, challenges
     app.register_blueprint(auth.bp)
     app.register_blueprint(main.bp)
     app.register_blueprint(workout.bp)
     app.register_blueprint(profile.bp)
-    app.register_blueprint(strava.bp)
+    # app.register_blueprint(strava.bp)  # Temporarily disabled
     app.register_blueprint(friends.bp)
     app.register_blueprint(challenges.bp)
     
