@@ -12,7 +12,7 @@ class User(UserMixin, db.Model):
     xp = db.Column(db.Integer, default=0)
     level = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_workout_at = db.Column(db.DateTime, nullable=True)
+    last_workout_date = db.Column(db.DateTime, nullable=True)
     xp_decay_rate = db.Column(db.Float, default=0.05)  # 5% decay per day after grace period
     xp_decay_grace_days = db.Column(db.Integer, default=3)  # Days before decay starts
     
@@ -242,10 +242,10 @@ class User(UserMixin, db.Model):
     
     def calculate_xp_decay(self):
         """Calculate how much XP will be lost due to inactivity."""
-        if not self.last_workout_at:
+        if not self.last_workout_date:
             return 0, None
             
-        days_since_workout = (datetime.utcnow() - self.last_workout_at).days
+        days_since_workout = (datetime.utcnow() - self.last_workout_date).days
         if days_since_workout <= self.xp_decay_grace_days:
             return 0, self.xp_decay_grace_days - days_since_workout
             
@@ -267,12 +267,12 @@ class User(UserMixin, db.Model):
     def update_last_workout(self):
         """Update the last workout timestamp."""
         try:
-            self.last_workout_at = datetime.utcnow()
+            self.last_workout_date = datetime.utcnow()
             db.session.commit()
         except Exception as e:
             # If the column doesn't exist, silently fail
             db.session.rollback()
-            print(f"Warning: Could not update last_workout_at: {e}")
+            print(f"Warning: Could not update last_workout_date: {e}")
             pass
 
 @login_manager.user_loader
