@@ -2,13 +2,33 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app import db
 from app.models.workout import Workout
+from werkzeug.security import generate_password_hash
 
 bp = Blueprint('profile', __name__)
 
 @bp.route('/profile')
 @login_required
 def index():
-    return render_template('profile/index.html', Workout=Workout)
+    return render_template('profile/index.html', Workout=Workout, user=current_user)
+
+@bp.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit():
+    if request.method == 'POST':
+        current_user.username = request.form.get('username', current_user.username)
+        current_user.email = request.form.get('email', current_user.email)
+        current_user.bio = request.form.get('bio', current_user.bio)
+        
+        # Handle password change if provided
+        password = request.form.get('password')
+        if password:
+            current_user.password_hash = generate_password_hash(password)
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('profile.index'))
+    
+    return render_template('profile/edit.html', user=current_user)
 
 @bp.route('/profile/avatar', methods=['GET', 'POST'])
 @login_required
