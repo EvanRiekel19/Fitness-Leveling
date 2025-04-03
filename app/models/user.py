@@ -16,6 +16,12 @@ class User(UserMixin, db.Model):
     xp_decay_rate = db.Column(db.Float, default=0.05)  # 5% decay per day after grace period
     xp_decay_grace_days = db.Column(db.Integer, default=3)  # Days before decay starts
     
+    # Stats fields
+    total_workouts = db.Column(db.Integer, default=0)
+    total_distance = db.Column(db.Float, default=0.0)  # in kilometers
+    total_duration = db.Column(db.Integer, default=0)  # in minutes
+    total_calories = db.Column(db.Integer, default=0)
+    
     # Avatar customization fields
     avatar_style = db.Column(db.String(20), default='adventurer')  # adventurer, identicon, bottts, etc.
     avatar_seed = db.Column(db.String(50))  # Used to generate consistent avatars
@@ -43,6 +49,26 @@ class User(UserMixin, db.Model):
         backref='receiver',
         lazy='dynamic'
     )
+    
+    @property
+    def total_workouts(self):
+        """Calculate total number of workouts."""
+        return self.workouts.count()
+
+    @property
+    def total_distance(self):
+        """Calculate total distance in kilometers."""
+        return sum(workout.distance or 0 for workout in self.workouts)
+
+    @property
+    def total_duration(self):
+        """Calculate total duration in minutes."""
+        return sum(workout.duration or 0 for workout in self.workouts)
+
+    @property
+    def total_calories(self):
+        """Calculate total calories burned."""
+        return sum(workout.calories or 0 for workout in self.workouts)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
