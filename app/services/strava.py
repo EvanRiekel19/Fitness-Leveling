@@ -1,4 +1,10 @@
-from stravalib import Client
+try:
+    from stravalib import Client
+    STRAVA_AVAILABLE = True
+except ImportError:
+    STRAVA_AVAILABLE = False
+    Client = None
+
 from datetime import datetime, timedelta
 from app import db
 from app.models.workout import Workout
@@ -6,6 +12,8 @@ from app.models.user import User
 
 class StravaService:
     def __init__(self, client_id, client_secret):
+        if not STRAVA_AVAILABLE:
+            raise ImportError("stravalib package is not installed")
         self.client = Client()
         self.client_id = client_id
         self.client_secret = client_secret

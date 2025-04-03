@@ -1,6 +1,6 @@
-from flask import Blueprint, redirect, url_for, flash, current_app, request
+from flask import Blueprint, redirect, url_for, flash, current_app, request, render_template
 from flask_login import login_required, current_user
-from app.services.strava import StravaService
+from app.services.strava import StravaService, STRAVA_AVAILABLE
 from app import db
 from datetime import datetime
 import urllib.parse
@@ -11,6 +11,10 @@ bp = Blueprint('strava', __name__, url_prefix='/strava')
 @login_required
 def connect():
     """Initiate Strava OAuth flow."""
+    if not STRAVA_AVAILABLE:
+        flash('Strava integration is currently unavailable. Please try again later.', 'error')
+        return redirect(url_for('profile.settings'))
+        
     try:
         strava_service = StravaService(
             client_id=current_app.config['STRAVA_CLIENT_ID'],
