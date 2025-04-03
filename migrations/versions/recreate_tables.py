@@ -51,8 +51,92 @@ def upgrade():
         sa.UniqueConstraint('username')
     )
 
-    # Create other tables...
-    # (Add other table creation statements here as needed)
+    # Create workout table
+    op.create_table('workout',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('type', sa.String(length=50), nullable=False),
+        sa.Column('subtype', sa.String(length=50), nullable=True),
+        sa.Column('duration', sa.Integer(), nullable=True),
+        sa.Column('distance', sa.Float(), nullable=True),
+        sa.Column('notes', sa.Text(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    # Create exercise table
+    op.create_table('exercise',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('workout_id', sa.Integer(), nullable=False),
+        sa.Column('name', sa.String(length=100), nullable=False),
+        sa.Column('order', sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(['workout_id'], ['workout.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    # Create exercise_set table
+    op.create_table('exercise_set',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('exercise_id', sa.Integer(), nullable=False),
+        sa.Column('reps', sa.Integer(), nullable=True),
+        sa.Column('weight', sa.Float(), nullable=True),
+        sa.Column('duration', sa.Integer(), nullable=True),
+        sa.Column('distance', sa.Float(), nullable=True),
+        sa.Column('order', sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(['exercise_id'], ['exercise.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    # Create friendship table
+    op.create_table('friendship',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('friend_id', sa.Integer(), nullable=False),
+        sa.Column('status', sa.String(length=20), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(['friend_id'], ['user.id'], ),
+        sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    # Create challenge table
+    op.create_table('challenge',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('creator_id', sa.Integer(), nullable=False),
+        sa.Column('title', sa.String(length=100), nullable=False),
+        sa.Column('description', sa.Text(), nullable=True),
+        sa.Column('type', sa.String(length=50), nullable=False),
+        sa.Column('target_value', sa.Float(), nullable=False),
+        sa.Column('start_date', sa.DateTime(), nullable=True),
+        sa.Column('end_date', sa.DateTime(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(['creator_id'], ['user.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    # Create challenge_participant table
+    op.create_table('challenge_participant',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('challenge_id', sa.Integer(), nullable=False),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('joined_at', sa.DateTime(), nullable=True),
+        sa.Column('current_value', sa.Float(), nullable=True),
+        sa.ForeignKeyConstraint(['challenge_id'], ['challenge.id'], ),
+        sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    # Create achievement table
+    op.create_table('achievement',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('name', sa.String(length=100), nullable=False),
+        sa.Column('description', sa.Text(), nullable=True),
+        sa.Column('earned_at', sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
 
 def downgrade():
     # Drop all tables
