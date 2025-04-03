@@ -9,7 +9,7 @@ bp = Blueprint('profile', __name__)
 @bp.route('/profile')
 @login_required
 def index():
-    return render_template('profile/index.html', Workout=Workout, user=current_user)
+    return render_template('profile/index.html', Workout=Workout, user=current_user._get_current_object())
 
 @bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
