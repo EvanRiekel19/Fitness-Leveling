@@ -20,10 +20,13 @@ class StravaService:
     def is_available(self):
         return self._strava_available
 
-    def get_authorization_url(self, redirect_uri):
-        """Generate the authorization URL for Strava OAuth."""
+    def _check_availability(self):
         if not self._strava_available:
             raise ImportError("stravalib package is not installed")
+
+    def get_authorization_url(self, redirect_uri):
+        """Generate the authorization URL for Strava OAuth."""
+        self._check_availability()
         print(f"Generating auth URL with redirect URI: {redirect_uri}")
         return self.client.authorization_url(
             client_id=self.client_id,
@@ -34,6 +37,7 @@ class StravaService:
 
     def get_access_token(self, code):
         """Exchange authorization code for access token."""
+        self._check_availability()
         try:
             print(f"Exchanging code for token... Client ID: {self.client_id}")
             token_response = self.client.exchange_code_for_token(
@@ -51,9 +55,10 @@ class StravaService:
 
     def get_athlete_activities(self, access_token, after_date=None):
         """Fetch athlete activities from Strava."""
+        self._check_availability()
         try:
             print(f"Fetching activities with token: {access_token[:10]}... after date: {after_date}")
-            self.client = Client(access_token)  # Create new client instance with token
+            self.client = self.client.__class__(access_token)  # Create new client instance with token
             activities = list(self.client.get_activities(limit=30))  # Get last 30 activities
             print(f"Found {len(activities)} activities")
             return activities
@@ -65,6 +70,7 @@ class StravaService:
 
     def import_activity(self, activity, user):
         """Import a Strava activity as a workout."""
+        self._check_availability()
         try:
             print(f"Importing activity: {activity.name} ({activity.type})")
             
@@ -158,6 +164,7 @@ class StravaService:
 
     def sync_activities(self, user):
         """Sync recent activities from Strava."""
+        self._check_availability()
         print("\n=== Starting Strava Sync ===")
         if not user.strava_access_token:
             print("No Strava access token found")
