@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models.challenge import Challenge, ChallengeParticipant
 from app.models.user import User
+from sqlalchemy import text
 
 bp = Blueprint('challenges', __name__)
 
@@ -82,19 +83,19 @@ def view(challenge_id):
             workout_type_filter = "type = 'cardio'"
         elif challenge.workout_type == 'strength':
             # For strength challenges, include all strength workout types
-            workout_type_filter = "type LIKE 'strength%'"
+            workout_type_filter = "type = 'strength'"
         elif challenge.workout_type.startswith('strength_'):
             # For specific strength workout types (e.g., strength_upper, strength_push)
             workout_type_filter = "(type = 'strength' AND subtype = :subtype)"
             workout_params['subtype'] = challenge.workout_type
         
-        query = f"""
+        query = text(f"""
             SELECT COUNT(*) 
             FROM workout 
             WHERE user_id = :user_id 
             AND {workout_type_filter}
             AND created_at BETWEEN :start_date AND :end_date
-        """
+        """)
         
         workout_count = db.session.execute(query, workout_params).scalar()
         
