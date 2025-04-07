@@ -7,7 +7,7 @@
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
         <!-- Profile Card -->
         <div class="md:col-span-4">
-            <div class="bg-dark-surface rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-dark-surface rounded-xl shadow-lg overflow-hidden">
                 <div class="p-6 text-center">
                     <img src="{{ user.get_avatar_url() }}" 
                          class="w-32 h-32 rounded-full mx-auto mb-4 object-cover bg-dark-hover" 
@@ -17,8 +17,8 @@
                     
                     <!-- XP Progress Bar -->
                     <div class="mt-4 relative">
-                        <div class="bg-gray-700 rounded-full h-4 overflow-hidden">
-                            <div class="bg-blue-500 h-full rounded-full transition-all duration-300 ease-in-out"
+                        <div class="bg-dark-hover rounded-full h-4 overflow-hidden">
+                            <div class="bg-blue-600 h-full rounded-full transition-all duration-300 ease-in-out"
                                  style="width: {{ (user.xp / (user.level * 1000)) * 100 }}%"></div>
                         </div>
                         <div class="absolute inset-0 flex items-center justify-center text-xs text-white">
@@ -39,85 +39,91 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4>Stats</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 text-center">
-                            <h5>Workouts</h5>
-                            <p class="h3">{{ user.total_workouts }}</p>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h5>Distance</h5>
-                            <p class="h3">{{ "%.1f"|format(user.total_distance) }} km</p>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h5>Duration</h5>
-                            <p class="h3">{{ user.total_duration // 60 }}h</p>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h5>Calories</h5>
-                            <p class="h3">{{ user.total_calories }}</p>
-                        </div>
+
+        <!-- Stats and Recent Activity -->
+        <div class="md:col-span-8 space-y-6">
+            <!-- Stats Grid -->
+            <div class="bg-dark-surface rounded-xl shadow-lg p-6">
+                <h4 class="text-lg font-medium text-gray-100 mb-4">Stats</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-dark-hover rounded-lg p-4 text-center">
+                        <h5 class="text-gray-300 font-medium mb-2">Workouts</h5>
+                        <p class="text-2xl font-bold text-blue-400">{{ user.total_workouts or 0 }}</p>
+                    </div>
+                    <div class="bg-dark-hover rounded-lg p-4 text-center">
+                        <h5 class="text-gray-300 font-medium mb-2">Distance</h5>
+                        <p class="text-2xl font-bold text-blue-400">{{ "%.1f"|format(user.total_distance or 0) }} km</p>
+                    </div>
+                    <div class="bg-dark-hover rounded-lg p-4 text-center">
+                        <h5 class="text-gray-300 font-medium mb-2">Duration</h5>
+                        <p class="text-2xl font-bold text-blue-400">{{ (user.total_duration or 0) // 60 }}h</p>
+                    </div>
+                    <div class="bg-dark-hover rounded-lg p-4 text-center">
+                        <h5 class="text-gray-300 font-medium mb-2">Calories</h5>
+                        <p class="text-2xl font-bold text-blue-400">{{ user.total_calories or 0 }}</p>
                     </div>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-header">
-                    <h4>Recent Workouts</h4>
-                </div>
-                <div class="card-body">
-                    {% if user.workouts %}
-                    <div class="list-group">
-                        {% for workout in user.workouts[:5] %}
-                        <a href="{{ url_for('workout.view', workout_id=workout.id) }}" 
-                           class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">{{ workout.name }}</h5>
-                                <small>{{ workout.date.strftime('%Y-%m-%d') }}</small>
+
+            <!-- Recent Workouts -->
+            <div class="bg-dark-surface rounded-xl shadow-lg p-6">
+                <h4 class="text-lg font-medium text-gray-100 mb-4">Recent Workouts</h4>
+                {% if user.workouts %}
+                <div class="space-y-4">
+                    {% for workout in user.workouts[:5] %}
+                    <a href="{{ url_for('workout.view', workout_id=workout.id) }}" 
+                       class="block bg-dark-hover rounded-lg p-4 hover:bg-opacity-75 transition-colors">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h5 class="text-gray-100 font-medium">{{ workout.name }}</h5>
+                                <p class="text-sm text-gray-400">{{ workout.date.strftime('%Y-%m-%d') }}</p>
                             </div>
-                            <p class="mb-1">{{ workout.description }}</p>
-                        </a>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No workouts yet. Start your fitness journey!</p>
-                    {% endif %}
+                            <span class="text-blue-400">+{{ workout.xp_earned }} XP</span>
+                        </div>
+                        {% if workout.description %}
+                        <p class="mt-2 text-sm text-gray-400">{{ workout.description }}</p>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
                 </div>
-            </div>
-            <!-- Strava Integration -->
-            <div class="bg-dark-surface rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-medium text-gray-100 mb-4">Strava Integration</h2>
-                {% if current_user.strava_access_token %}
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 bg-dark-hover rounded-lg p-4">
-                        <div>
-                            <p class="text-gray-300">Connected to Strava</p>
-                            <p class="text-sm text-gray-400">Last synced: {{ current_user.strava_last_sync.strftime('%Y-%m-%d %H:%M') if current_user.strava_last_sync else 'Never' }}</p>
-                        </div>
-                        <div class="flex w-full sm:w-auto space-x-3">
-                            <a href="{{ url_for('strava.sync') }}" class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 h-10 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-                                Sync Now
-                            </a>
-                            <a href="{{ url_for('strava.disconnect') }}" class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 h-10 text-sm font-medium rounded-lg text-red-400 border border-red-600 hover:bg-red-900 hover:text-white transition-colors">
-                                Disconnect
-                            </a>
-                        </div>
-                    </div>
                 {% else %}
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 bg-dark-hover rounded-lg p-4">
+                <p class="text-gray-400 text-center py-4">No workouts yet. Start your fitness journey!</p>
+                {% endif %}
+            </div>
+
+            <!-- Strava Integration -->
+            <div class="bg-dark-surface rounded-xl shadow-lg p-6">
+                <h4 class="text-lg font-medium text-gray-100 mb-4">Strava Integration</h4>
+                {% if current_user.strava_access_token %}
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 bg-dark-hover rounded-lg p-4">
+                    <div>
+                        <p class="text-gray-300">Connected to Strava</p>
+                        <p class="text-sm text-gray-400">Last synced: {{ current_user.strava_last_sync.strftime('%Y-%m-%d %H:%M') if current_user.strava_last_sync else 'Never' }}</p>
+                    </div>
+                    <div class="flex w-full sm:w-auto space-x-3">
+                        <a href="{{ url_for('strava.sync') }}" 
+                           class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 h-10 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                            Sync Now
+                        </a>
+                        <a href="{{ url_for('strava.disconnect') }}" 
+                           class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 h-10 text-sm font-medium rounded-lg text-red-400 border border-red-600 hover:bg-red-900 hover:text-white transition-colors">
+                            Disconnect
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-dark-hover rounded-lg p-4">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
                         <div>
                             <p class="text-gray-300">Connect your Strava account</p>
                             <p class="text-sm text-gray-400">Import your workouts automatically</p>
                         </div>
-                        {# Temporarily disabled Strava integration
-                        <a href="{{ url_for('strava.connect') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-4 h-10 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                        <a href="{{ url_for('strava.connect') }}" 
+                           class="w-full sm:w-auto inline-flex items-center justify-center px-4 h-10 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
                             Connect Strava
                         </a>
-                        #}
                     </div>
+                </div>
                 {% endif %}
             </div>
         </div>
