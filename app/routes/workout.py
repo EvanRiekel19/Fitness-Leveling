@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app.models.workout import Workout
-from app.models.exercise import Exercise
-from app.models.exercise_set import ExerciseSet
+from app.models.exercise import Exercise, ExerciseSet
 from app import db
 import json
 from sqlalchemy import text
+from app.models.user import User
+from datetime import datetime, timedelta
 
 bp = Blueprint('workout', __name__)
 
