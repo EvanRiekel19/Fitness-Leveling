@@ -40,7 +40,13 @@ class Challenge(db.Model):
         if self.workout_type:
             if self.workout_type == 'strength':
                 # For strength challenges, include all strength workout types
-                workouts = workouts.filter(Workout.type.like('strength%'))
+                workouts = workouts.filter(Workout.type == 'strength')
+            elif self.workout_type.startswith('strength_'):
+                # For specific strength workout types (e.g., strength_upper, strength_push)
+                workouts = workouts.filter(
+                    Workout.type == 'strength',
+                    Workout.subtype == self.workout_type
+                )
             else:
                 workouts = workouts.filter_by(type=self.workout_type)
 
