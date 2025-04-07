@@ -1,9 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app.models.workout import Workout
-from app.models.exercise import Exercise, ExerciseSet
+from app.models.exercise import Exercise
+from app.models.exercise_set import ExerciseSet
 from app import db
 import json
+from sqlalchemy import text
 
 bp = Blueprint('workout', __name__)
 
@@ -41,6 +43,12 @@ def new_cardio():
             subtype = request.form.get('subtype', 'cardio_other')
             print(f"DEBUG CARDIO: Using subtype: {subtype}")
             
+            # Get distance and convert if needed
+            distance = safe_float(request.form.get('distance'))
+            if distance > 0 and current_user.distance_unit == 'miles':
+                # Convert miles to kilometers for storage
+                distance = distance * 1.60934
+            
             # Create workout
             workout = Workout(
                 user_id=current_user.id,
@@ -49,7 +57,7 @@ def new_cardio():
                 name=request.form.get('name', ''),
                 duration=safe_int(request.form.get('duration')),
                 intensity=safe_int(request.form.get('intensity'), 5),
-                distance=safe_float(request.form.get('distance')),
+                distance=distance,
                 notes=request.form.get('notes', '')
             )
             
@@ -96,24 +104,25 @@ def new_cardio():
             if history:
                 workout_history[workout_type] = history
         
-        # Render template
+        # Render template with user's distance unit preference
         return render_template(
             'workout/new_cardio.html',
-            workout_history=workout_history
+            workout_history=workout_history,
+            distance_unit=current_user.distance_unit
         )
 
 def get_exercise_history(exercise_name, user_id):
     """Get previous workout data and PRs for a specific exercise."""
     try:
         # Get all exercises with this name for the user
-        exercises = db.session.execute("""
+        exercises = db.session.execute(text("""
             SELECT e.id, e.workout_id, e.name, w.date
             FROM exercise e
             JOIN workout w ON e.workout_id = w.id
             WHERE e.name = :exercise_name AND w.user_id = :user_id
             ORDER BY w.date DESC
             LIMIT 5
-        """, {'exercise_name': exercise_name, 'user_id': user_id}).fetchall()
+        """), {'exercise_name': exercise_name, 'user_id': user_id}).fetchall()
         
         if not exercises:
             return None
@@ -121,12 +130,12 @@ def get_exercise_history(exercise_name, user_id):
         # Get sets for each exercise
         history = []
         for ex in exercises:
-            sets = db.session.execute("""
+            sets = db.session.execute(text("""
                 SELECT set_number, reps, weight, notes
                 FROM exercise_set
                 WHERE exercise_id = :exercise_id
                 ORDER BY set_number
-            """, {'exercise_id': ex[0]}).fetchall()
+            """), {'exercise_id': ex[0]}).fetchall()
             
             history.append({
                 'date': ex[3],
@@ -176,7 +185,7 @@ def get_workout_history(workout_type, user_id):
         print(f"\nDEBUG: Getting workout history for type: {workout_type}")
         
         # First, let's see what workouts exist with their exact types/subtypes
-        all_workouts = db.session.execute("""
+        all_workouts = db.session.execute(text("""
             SELECT id, name, type, subtype, created_at
             FROM workout 
             WHERE user_id = :user_id
@@ -190,15 +199,14 @@ def get_workout_history(workout_type, user_id):
                 OR name LIKE '%legs%'
             )
             ORDER BY created_at DESC
-            LIMIT 10
-        """, {'user_id': user_id}).fetchall()
+        """), {'user_id': user_id}).fetchall()
         
         print("\nDEBUG: Recent strength/split workouts in system:")
         for w in all_workouts:
             print(f"ID: {w[0]}, Name: {w[1]}, Type: {w[2]}, Subtype: {w[3]}, Date: {w[4]}")
         
         # Now get the matching workouts with expanded matching criteria
-        workouts = db.session.execute("""
+        workouts = db.session.execute(text("""
             SELECT id, name, duration, intensity, created_at, notes, type, subtype
             FROM workout
             WHERE user_id = :user_id 
@@ -212,7 +220,7 @@ def get_workout_history(workout_type, user_id):
             )
             ORDER BY created_at DESC
             LIMIT 5
-        """, {
+        """), {
             'workout_type': workout_type,
             'user_id': user_id,
             'like_pattern': f'%{workout_type.replace("strength_", "")}%',
@@ -233,7 +241,7 @@ def get_workout_history(workout_type, user_id):
         workout_id = last_workout[0]
         
         # Get exercises and their sets for this workout
-        exercises = db.session.execute("""
+        exercises = db.session.execute(text("""
             SELECT 
                 e.id, 
                 e.name,
@@ -246,7 +254,7 @@ def get_workout_history(workout_type, user_id):
             WHERE e.workout_id = :workout_id
             GROUP BY e.id, e.name
             ORDER BY e.id
-        """, {'workout_id': workout_id}).fetchall()
+        """), {'workout_id': workout_id}).fetchall()
         
         print(f"\nDEBUG: Found {len(exercises)} exercises")
         for ex in exercises:
