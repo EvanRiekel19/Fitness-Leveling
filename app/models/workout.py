@@ -4,83 +4,45 @@ from datetime import datetime
 class Workout(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    type = db.Column(db.String(50), nullable=False)  # e.g., 'cardio', 'strength', 'flexibility'
-    subtype = db.Column(db.String(50))  # e.g., 'cardio_running', 'strength_upper'
-    name = db.Column(db.String(100), nullable=False)
-    duration = db.Column(db.Integer)  # Duration in minutes
-    intensity = db.Column(db.Integer)  # 1-10 scale
-    sets = db.Column(db.Integer)  # For strength training
-    reps = db.Column(db.Integer)  # For strength training
-    distance = db.Column(db.Float)  # For cardio (in kilometers)
-    xp_earned = db.Column(db.Integer)
+    type = db.Column(db.String(50), nullable=False)  # 'strength' or 'cardio'
+    subtype = db.Column(db.String(50))  # e.g., 'push', 'pull', 'legs', 'running', 'cycling'
+    name = db.Column(db.String(100))
+    duration = db.Column(db.Integer)  # in minutes
+    intensity = db.Column(db.Integer)  # scale of 1-10
+    distance = db.Column(db.Float)  # in kilometers
+    calories = db.Column(db.Integer)
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    strava_id = db.Column(db.String(50), unique=True)  # Added to prevent duplicates
+    xp_earned = db.Column(db.Integer)
     
-    # Add relationship to exercises
+    # Relationships
     exercises = db.relationship('Exercise', back_populates='workout', lazy='dynamic', cascade="all, delete-orphan")
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        from app.models.user import User
-        if self.user_id:
-            user = User.query.get(self.user_id)
-            if user:
-                try:
-                    user.update_last_workout()
-                except:
-                    # For backward compatibility with old databases
-                    pass
+
+    def __repr__(self):
+        return f'<Workout {self.id}: {self.type}>'
     
     def calculate_xp(self):
-        """Calculate XP based on workout type and parameters."""
-        # Base XP is higher for longer workouts
-        base_xp = 75
+        """Calculate XP earned for this workout."""
+        base_xp = 50  # Base XP for completing any workout
         
-        # Duration multiplier (1-3x for longer workouts)
-        duration_multiplier = min(3, max(1, self.duration / 30))
+        # Duration bonus (every 10 minutes = +5 XP)
+        duration_bonus = (self.duration or 0) // 10 * 5
         
-        # Intensity multiplier (1-2x)
-        intensity_multiplier = 1 + (self.intensity / 10)
+        # Intensity bonus (intensity level * 5)
+        intensity_bonus = (self.intensity or 0) * 5
         
-        # Type-specific bonuses
-        if self.type == 'cardio':
-            if self.distance:
-                # 30 XP per km
-                base_xp += self.distance * 30
-        elif self.type == 'strength':
-            # Calculate XP based on exercises if present
-            exercise_xp = 0
-            
-            # Extra base XP for strength workouts over 45 minutes
-            if self.duration > 45:
-                base_xp += (self.duration - 45) * 2  # 2 XP per minute over 45
-            
-            if self.exercises.count() > 0:
-                # Count the total number of sets across all exercises
-                total_sets = 0
-                total_reps = 0
-                
-                for exercise in self.exercises:
-                    for exercise_set in exercise.sets:
-                        total_sets += 1
-                        if exercise_set.reps:
-                            total_reps += exercise_set.reps
-                
-                # Award XP based on total volume
-                exercise_xp = total_sets * 12 + total_reps * 0.35
-                base_xp += exercise_xp
-            elif self.sets and self.reps:
-                # Fallback to old calculation if no exercises are recorded
-                base_xp += (self.sets * self.reps) * 0.5
-        elif self.type == 'flexibility':
-            # 1.5 XP per minute
-            base_xp += self.duration * 1.5
-            
-        # Calculate final XP
-        self.xp_earned = int(base_xp * duration_multiplier * intensity_multiplier)
-        return self.xp_earned
+        # Distance bonus for cardio (every km = +10 XP)
+        distance_bonus = int((self.distance or 0) * 10)
         
+        # Exercise bonus for strength (+10 XP per exercise)
+        exercise_bonus = 0
+        if self.type == 'strength':
+            exercise_bonus = self.exercises.count() * 10
+        
+        total_xp = base_xp + duration_bonus + intensity_bonus + distance_bonus + exercise_bonus
+        self.xp_earned = total_xp
+        return total_xp
+
     def get_distance_miles(self):
         """Convert kilometers to miles."""
         if self.distance:
