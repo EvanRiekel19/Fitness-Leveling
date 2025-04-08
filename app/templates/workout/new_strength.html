@@ -342,7 +342,7 @@
             const last = history.last_workout;
             html += `
                 <div class="mt-2">
-                    <div class="text-gray-400">Last workout (${formatDate(last.date)}):</div>
+                    <div class="text-gray-400">Last workout (${formatDate(last.created_at)}):</div>
                     <div class="text-xs mt-1">
                         <div class="text-gray-200">${last.name}</div>
                         <div class="text-gray-400">
@@ -744,7 +744,7 @@
         console.log('Displaying workout:', workout);
         
         // Update the workout details
-        document.getElementById('prev-workout-date').textContent = formatDate(workout.date);
+        document.getElementById('prev-workout-date').textContent = formatDate(workout.created_at);
         document.getElementById('prev-workout-duration').textContent = `${workout.duration} min`;
         document.getElementById('prev-workout-intensity').textContent = `${workout.intensity}/10`;
         

@@ -177,7 +177,7 @@
                     noPreviousWorkoutDiv.classList.add('hidden');
                     previousWorkoutDetailsDiv.classList.remove('hidden');
                     
-                    document.getElementById('prev-workout-date').textContent = formatDate(data.last_workout.date);
+                    document.getElementById('prev-workout-date').textContent = formatDate(data.last_workout.created_at);
                     document.getElementById('prev-workout-duration').textContent = `${data.last_workout.duration} min`;
                     document.getElementById('prev-workout-distance').textContent = `${data.last_workout.distance || 0} km`;
                     document.getElementById('prev-workout-intensity').textContent = `${data.last_workout.intensity}/10`;
