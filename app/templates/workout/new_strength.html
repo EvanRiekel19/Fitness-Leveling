@@ -263,25 +263,81 @@
             console.log('Initializing form with existing exercises:', serverData.initialExercises);
             noExercisesMessage.style.display = 'none';
             
+            // Parse initialExercises if it's a string
+            let exercises = typeof serverData.initialExercises === 'string' 
+                ? JSON.parse(serverData.initialExercises) 
+                : serverData.initialExercises;
+            
+            console.log('Parsed exercises:', exercises);
+            
             // Add each exercise from the initial data
-            serverData.initialExercises.forEach(exerciseData => {
+            exercises.forEach(exerciseData => {
+                console.log('Processing exercise:', exerciseData);
                 const exerciseCard = addExercise();
                 const exerciseNameInput = exerciseCard.querySelector('.exercise-name');
                 exerciseNameInput.value = exerciseData.name;
                 
+                // Remove the automatically added first set
+                const setsTableBody = exerciseCard.querySelector('.sets-table-body');
+                setsTableBody.innerHTML = '';
+                
                 // Add sets for this exercise
-                exerciseData.sets.forEach(setData => {
-                    const setRow = addSetToExercise(exerciseCard);
-                    if (setRow) {
+                if (exerciseData.sets && exerciseData.sets.length > 0) {
+                    exerciseData.sets.forEach(setData => {
+                        console.log('Processing set:', setData);
+                        const setNumber = setData.set_number || 1;
+                        
+                        // Create row and add HTML
+                        const setRow = document.createElement('tr');
+                        setRow.classList.add('set-row');
+                        setRow.dataset.setNumber = setNumber;
+                        
+                        // Create the row content
+                        setRow.innerHTML = `
+                            <td class="px-2 py-2">
+                                <span class="set-number">${setNumber}</span>
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" class="set-weight block w-full bg-dark-surface border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100" 
+                                    placeholder="0" min="0" step="0.5" value="${setData.weight || ''}">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" class="set-reps block w-full bg-dark-surface border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100" 
+                                    placeholder="0" min="1" required value="${setData.reps || ''}">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="text" class="set-notes block w-full bg-dark-surface border-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-100" 
+                                    placeholder="Optional notes" value="${setData.notes || ''}">
+                            </td>
+                            <td class="px-2 py-2">
+                                <button type="button" class="remove-set-btn text-gray-400 hover:text-red-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </td>
+                        `;
+                        
+                        // Add set to DOM
+                        setsTableBody.appendChild(setRow);
+                        
+                        // Add event listeners
+                        const removeSetBtn = setRow.querySelector('.remove-set-btn');
                         const weightInput = setRow.querySelector('.set-weight');
                         const repsInput = setRow.querySelector('.set-reps');
                         const notesInput = setRow.querySelector('.set-notes');
                         
-                        if (weightInput) weightInput.value = setData.weight || '';
-                        if (repsInput) repsInput.value = setData.reps || '';
-                        if (notesInput) notesInput.value = setData.notes || '';
-                    }
-                });
+                        removeSetBtn.addEventListener('click', () => removeSet(exerciseCard.dataset.exerciseId, setNumber));
+                        weightInput.addEventListener('change', updateExercisesData);
+                        repsInput.addEventListener('change', updateExercisesData);
+                        notesInput.addEventListener('change', updateExercisesData);
+                    });
+                }
+                
+                // Hide no sets message if we added sets
+                if (exerciseData.sets && exerciseData.sets.length > 0) {
+                    exerciseCard.querySelector('.no-sets-message').style.display = 'none';
+                }
                 
                 // Update exercise history
                 updateExerciseHistory(exerciseCard, exerciseData.name);
@@ -289,6 +345,8 @@
             
             // Update the exercises data
             updateExercisesData();
+        } else {
+            console.log('No initial exercises found');
         }
     }
     
