@@ -487,12 +487,12 @@ def view(workout_id):
                 print(f"DEBUG: Found {exercise_count} exercises using SQLAlchemy")
                 
                 # Get all exercises using parameterized query
-                exercise_sql = """
+                exercise_sql = text("""
                     SELECT id, workout_id, name 
                     FROM exercise 
                     WHERE workout_id = :workout_id
                     ORDER BY id
-                """
+                """)
                 exercises_result = db.session.execute(exercise_sql, {"workout_id": workout_id})
                 exercise_rows = exercises_result.fetchall()
                 
@@ -507,12 +507,12 @@ def view(workout_id):
                     print(f"\nDEBUG: Processing exercise {ex_id}: {ex_name}")
                     
                     # Get all sets for this exercise using parameterized query
-                    sets_sql = """
+                    sets_sql = text("""
                         SELECT es.id, es.exercise_id, es.set_number, es.reps, es.weight, es.notes
                         FROM exercise_set es
                         WHERE es.exercise_id = :exercise_id
                         ORDER BY es.set_number ASC
-                    """
+                    """)
                     sets_result = db.session.execute(sets_sql, {"exercise_id": ex_id})
                     set_rows = sets_result.fetchall()
                     
