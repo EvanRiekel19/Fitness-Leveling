@@ -3,6 +3,7 @@ from app import db
 class Exercise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     workout_id = db.Column(db.Integer, db.ForeignKey('workout.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)  # Name of the exercise (e.g., "Bench Press")
     type = db.Column(db.String(50), nullable=False, default='strength')  # Type of exercise (e.g., 'strength', 'cardio')
     sets = db.relationship('app.models.exercise_set.ExerciseSet', back_populates='exercise', lazy='dynamic', cascade="all, delete-orphan")
