@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     last_workout_date = db.Column(db.DateTime, nullable=True)
     xp_decay_rate = db.Column(db.Float, default=0.05)  # 5% decay per day after grace period
     xp_decay_grace_days = db.Column(db.Integer, default=3)  # Days before decay starts
+    distance_unit = db.Column(db.String(20), default='kilometers')  # Add distance unit preference
     
     # Stats fields
     total_workouts = db.Column(db.Integer, default=0)
@@ -35,6 +36,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     workouts = db.relationship('Workout', backref='user', lazy='dynamic')
+    exercise_sets = db.relationship('ExerciseSet', backref='user', lazy=True)
     
     # Friend relationships
     sent_friend_requests = db.relationship(
