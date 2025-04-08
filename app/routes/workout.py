@@ -1,12 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app.models.workout import Workout
-from app.models.exercise import Exercise, ExerciseSet
+from app.models.exercise import Exercise
+from app.models.exercise_set import ExerciseSet
 from app import db
 import json
 from sqlalchemy import text
-from app.models.user import User
-from datetime import datetime, timedelta
 
 bp = Blueprint('workout', __name__)
 
@@ -116,14 +115,14 @@ def get_exercise_history(exercise_name, user_id):
     """Get previous workout data and PRs for a specific exercise."""
     try:
         # Get all exercises with this name for the user
-        exercises = db.session.execute(text("""
+        exercises = db.session.execute("""
             SELECT e.id, e.workout_id, e.name, w.date
             FROM exercise e
             JOIN workout w ON e.workout_id = w.id
             WHERE e.name = :exercise_name AND w.user_id = :user_id
             ORDER BY w.date DESC
             LIMIT 5
-        """), {'exercise_name': exercise_name, 'user_id': user_id}).fetchall()
+        """, {'exercise_name': exercise_name, 'user_id': user_id}).fetchall()
         
         if not exercises:
             return None
@@ -131,12 +130,12 @@ def get_exercise_history(exercise_name, user_id):
         # Get sets for each exercise
         history = []
         for ex in exercises:
-            sets = db.session.execute(text("""
+            sets = db.session.execute("""
                 SELECT set_number, reps, weight, notes
                 FROM exercise_set
                 WHERE exercise_id = :exercise_id
                 ORDER BY set_number
-            """), {'exercise_id': ex[0]}).fetchall()
+            """, {'exercise_id': ex[0]}).fetchall()
             
             history.append({
                 'date': ex[3],
@@ -293,6 +292,24 @@ def get_workout_history(workout_type, user_id):
 def new_strength():
     if request.method == 'POST':
         try:
+            # Check if workout_id column exists in exercise table
+            try:
+                db.session.execute(text("""
+                    SELECT workout_id FROM exercise LIMIT 1
+                """))
+            except Exception as e:
+                if 'column "workout_id" does not exist' in str(e):
+                    # Add the column if it doesn't exist
+                    db.session.execute(text("""
+                        ALTER TABLE exercise 
+                        ADD COLUMN workout_id INTEGER,
+                        ADD CONSTRAINT fk_exercise_workout_id 
+                        FOREIGN KEY (workout_id) 
+                        REFERENCES workout (id)
+                    """))
+                    db.session.commit()
+                    print("Added workout_id column to exercise table")
+
             # Helper functions
             def safe_int(value, default=0):
                 try:
@@ -310,26 +327,6 @@ def new_strength():
             subtype = request.form.get('subtype', 'strength_full')
             print(f"DEBUG STRENGTH: Using subtype: {subtype}")
             
-            # Create workout
-            workout = Workout(
-                user_id=current_user.id,
-                type='strength',
-                subtype=subtype,  # Set subtype directly
-                name=request.form.get('name', ''),
-                duration=safe_int(request.form.get('duration')),
-                intensity=safe_int(request.form.get('intensity'), 5),
-                notes=request.form.get('notes', '')
-            )
-            
-            # Validate required fields
-            if not workout.name:
-                flash('Workout name is required', 'error')
-                return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
-            
-            if workout.duration <= 0:
-                flash('Duration must be greater than 0', 'error')
-                return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
-            
             # Process exercises data from form
             try:
                 exercises_data = request.form.get('exercises_data', '[]')
@@ -340,12 +337,23 @@ def new_strength():
             except json.JSONDecodeError as e:
                 print(f"DEBUG STRENGTH: JSON decode error: {e}")
                 exercises_data = []
-            
+
+            # Create workout
+            workout = Workout(
+                user_id=current_user.id,
+                type='strength',
+                subtype=subtype,
+                name=request.form.get('name', ''),
+                duration=safe_int(request.form.get('duration')),
+                intensity=safe_int(request.form.get('intensity')),
+                notes=request.form.get('notes', '')
+            )
+
             # Save workout to get an ID
             db.session.add(workout)
             db.session.flush()
             print(f"DEBUG STRENGTH: Created workout with ID: {workout.id}")
-            
+
             # Process and add exercises
             for i, exercise_data in enumerate(exercises_data):
                 try:
@@ -353,70 +361,56 @@ def new_strength():
                     if not exercise_name:
                         print(f"DEBUG STRENGTH: Skipping exercise {i+1} - no name")
                         continue
-                        
-                    # Create the exercise
+
+                    # Create exercise
                     exercise = Exercise(
                         workout_id=workout.id,
                         name=exercise_name
                     )
                     db.session.add(exercise)
                     db.session.flush()
-                    print(f"DEBUG STRENGTH: Added exercise: {exercise_name} with ID: {exercise.id}")
-                    
+                    print(f"DEBUG STRENGTH: Created exercise '{exercise_name}' with ID: {exercise.id}")
+
                     # Add sets for this exercise
                     sets_data = exercise_data.get('sets', [])
                     print(f"DEBUG STRENGTH: Processing {len(sets_data)} sets for exercise '{exercise_name}'")
-                    
+
                     for set_data in sets_data:
                         exercise_set = ExerciseSet(
                             exercise_id=exercise.id,
-                            set_number=set_data.get('set_number', 1),  # Use the set number from the form
+                            set_number=set_data.get('set_number', 1),
                             reps=safe_int(set_data.get('reps')),
                             weight=safe_float(set_data.get('weight')),
                             notes=set_data.get('notes', '')
                         )
                         db.session.add(exercise_set)
                         print(f"DEBUG STRENGTH: Added set {exercise_set.set_number} with {safe_int(set_data.get('reps'))} reps at {safe_float(set_data.get('weight'))} kg")
+
                 except Exception as e:
                     print(f"DEBUG STRENGTH: Error adding exercise {i+1}: {e}")
-            
-            # Calculate XP and update user
-            try:
-                xp_earned = workout.calculate_xp()
-                print(f"DEBUG STRENGTH: Calculated XP: {xp_earned}")
-                
-                current_user.add_xp(xp_earned)
-                print(f"DEBUG STRENGTH: Added XP to user")
-            except Exception as e:
-                print(f"DEBUG STRENGTH: XP calculation/assignment error: {e}")
-                xp_earned = 50  # Fallback
-            
+                    db.session.rollback()
+                    flash('Error adding exercise. Please try again.', 'error')
+                    return redirect(url_for('workout.new_strength'))
+
+            # Calculate and set XP
+            xp_earned = workout.calculate_xp()
+            print(f"DEBUG STRENGTH: Calculated XP: {xp_earned}")
+            workout.xp_earned = xp_earned
+
+            # Commit all changes
             db.session.commit()
             print(f"DEBUG STRENGTH: Successfully committed workout with {len(exercises_data)} exercises")
-            
+
             flash(f'Strength workout logged! Earned {xp_earned} XP', 'success')
             return redirect(url_for('workout.index'))
+
         except Exception as e:
-            db.session.rollback()
-            import traceback
             print(f"ERROR in strength workout submission: {e}")
-            print(traceback.format_exc())
-            flash(f'Error logging workout: {str(e)}', 'error')
-            return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
-    else:  # GET request
-        # Get workout history for all strength workout types
-        workout_history = {}
-        for workout_type in ['strength_upper', 'strength_lower', 'strength_push', 'strength_pull', 'strength_full', 'strength_other']:
-            history = get_workout_history(workout_type, current_user.id)
-            if history:
-                workout_history[workout_type] = history
-        
-        # Get exercise options and render template
-        return render_template(
-            'workout/new_strength.html',
-            exercise_options=get_exercise_options(),
-            workout_history=workout_history
-        )
+            db.session.rollback()
+            flash('Error logging workout. Please try again.', 'error')
+            return redirect(url_for('workout.new_strength'))
+
+    return render_template('workout/new_strength.html', exercise_options=get_exercise_options())
 
 # Helper function to get exercise options
 def get_exercise_options():
