@@ -292,24 +292,6 @@ def get_workout_history(workout_type, user_id):
 def new_strength():
     if request.method == 'POST':
         try:
-            # Check if workout_id column exists in exercise table
-            try:
-                db.session.execute(text("""
-                    SELECT workout_id FROM exercise LIMIT 1
-                """))
-            except Exception as e:
-                if 'column "workout_id" does not exist' in str(e):
-                    # Add the column if it doesn't exist
-                    db.session.execute(text("""
-                        ALTER TABLE exercise 
-                        ADD COLUMN workout_id INTEGER,
-                        ADD CONSTRAINT fk_exercise_workout_id 
-                        FOREIGN KEY (workout_id) 
-                        REFERENCES workout (id)
-                    """))
-                    db.session.commit()
-                    print("Added workout_id column to exercise table")
-
             # Helper functions
             def safe_int(value, default=0):
                 try:
@@ -323,10 +305,6 @@ def new_strength():
                 except (ValueError, TypeError):
                     return default
 
-            # Get the subtype
-            subtype = request.form.get('subtype', 'strength_full')
-            print(f"DEBUG STRENGTH: Using subtype: {subtype}")
-            
             # Process exercises data from form
             try:
                 exercises_data = request.form.get('exercises_data', '[]')
@@ -342,7 +320,7 @@ def new_strength():
             workout = Workout(
                 user_id=current_user.id,
                 type='strength',
-                subtype=subtype,
+                subtype=request.form.get('subtype', 'strength_full'),
                 name=request.form.get('name', ''),
                 duration=safe_int(request.form.get('duration')),
                 intensity=safe_int(request.form.get('intensity')),
