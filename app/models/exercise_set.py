@@ -2,6 +2,7 @@ from app import db
 
 class ExerciseSet(db.Model):
     __tablename__ = 'exercise_set'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
