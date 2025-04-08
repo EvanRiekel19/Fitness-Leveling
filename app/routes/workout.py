@@ -466,6 +466,9 @@ def view(workout_id):
     try:
         workout = Workout.query.get_or_404(workout_id)
         print(f"\nDEBUG: Loading workout {workout_id}")
+        print(f"DEBUG: Workout type: {workout.type}")
+        print(f"DEBUG: Workout name: {workout.name}")
+        print(f"DEBUG: Workout user_id: {workout.user_id}")
         
         # Security check
         if workout.user_id != current_user.id:
@@ -479,6 +482,10 @@ def view(workout_id):
         if workout.type == 'strength':
             print(f"DEBUG: Processing strength workout")
             try:
+                # First check if there are any exercises using SQLAlchemy
+                exercise_count = Exercise.query.filter_by(workout_id=workout_id).count()
+                print(f"DEBUG: Found {exercise_count} exercises using SQLAlchemy")
+                
                 # Get all exercises using parameterized query
                 exercise_sql = """
                     SELECT id, workout_id, name 
@@ -490,6 +497,7 @@ def view(workout_id):
                 exercise_rows = exercises_result.fetchall()
                 
                 print(f"DEBUG: Found {len(exercise_rows)} exercises")
+                print("DEBUG: Exercise rows:", exercise_rows)
                 
                 # Process each exercise
                 for ex_row in exercise_rows:
@@ -509,6 +517,7 @@ def view(workout_id):
                     set_rows = sets_result.fetchall()
                     
                     print(f"DEBUG: Found {len(set_rows)} sets")
+                    print("DEBUG: Set rows:", set_rows)
                     
                     # Create exercise object
                     exercise = {
@@ -552,6 +561,7 @@ def view(workout_id):
         print(f"Total exercises: {len(exercises)}")
         for ex in exercises:
             print(f"Exercise {ex['model']['name']}: {len(ex['ordered_sets'])} sets")
+            print("Exercise sets:", ex['ordered_sets'])
         
         return render_template('workout/view.html', workout=workout, exercises=exercises)
     
