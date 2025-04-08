@@ -779,3 +779,24 @@ def delete(id):
         flash(f'Error deleting workout: {str(e)}', 'error')
     
     return redirect(url_for('workout.index'))
+
+@bp.route('/workouts/recalculate-xp', methods=['POST'])
+@login_required
+def recalculate_xp():
+    try:
+        # Get all workouts for the current user
+        workouts = Workout.query.filter_by(user_id=current_user.id).all()
+        
+        # Calculate total XP from workouts
+        total_xp = sum(workout.xp_earned or 0 for workout in workouts)
+        
+        # Update user's XP
+        current_user.xp = total_xp
+        db.session.commit()
+        
+        flash(f'XP recalculated successfully. Your new XP total is {total_xp}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error recalculating XP: {str(e)}', 'error')
+    
+    return redirect(url_for('workout.index'))

@@ -6,9 +6,19 @@
 <div class="space-y-6">
     <div class="flex justify-between items-center">
         <h1 class="text-2xl font-bold text-gray-100">My Workouts</h1>
-        <a href="{{ url_for('workout.new') }}" class="inline-flex items-center px-4 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Log New Workout
-        </a>
+        <div class="flex items-center space-x-4">
+            <form action="{{ url_for('workout.recalculate_xp') }}" method="POST" class="inline">
+                <button type="submit" class="text-sm text-blue-400 hover:text-blue-300 flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Recalculate XP
+                </button>
+            </form>
+            <a href="{{ url_for('workout.new') }}" class="inline-flex items-center px-4 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                Log New Workout
+            </a>
+        </div>
     </div>
 
     {% if workouts %}
