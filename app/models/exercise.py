@@ -8,7 +8,7 @@ class Exercise(db.Model):
     type = db.Column(db.String(50), nullable=False, default='strength')
     
     # Relationships
-    sets = db.relationship('ExerciseSet', backref='exercise', lazy='dynamic', cascade="all, delete-orphan")
+    sets = db.relationship('app.models.exercise_set.ExerciseSet', backref='exercise', lazy='dynamic', cascade="all, delete-orphan")
     workout = db.relationship('Workout', back_populates='exercises')
 
     def __repr__(self):
