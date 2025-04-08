@@ -358,7 +358,7 @@ def new_strength():
                         workout_id=workout.id,
                         name=exercise_name,
                         type='strength',
-                        user_id=current_user.id  # Add the user_id
+                        user_id=current_user.id
                     )
                     db.session.add(exercise)
                     db.session.flush()
@@ -666,7 +666,9 @@ def edit(id):
                 for exercise_data in exercises_data:
                     exercise = Exercise(
                         workout_id=workout.id,
-                        name=exercise_data['name']
+                        name=exercise_data['name'],
+                        type='strength',  # Explicitly set type
+                        user_id=current_user.id
                     )
                     db.session.add(exercise)
                     db.session.flush()  # Get the exercise ID
