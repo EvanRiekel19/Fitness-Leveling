@@ -372,9 +372,9 @@ def new_strength():
                         exercise_set = ExerciseSet(
                             exercise_id=exercise.id,
                             user_id=current_user.id,  # Add the user_id
-                            set_number=set_data.get('set_number', 1),
-                            reps=safe_int(set_data.get('reps')),
+                            set_number=set_data['set_number'],
                             weight=safe_float(set_data.get('weight')),
+                            reps=safe_int(set_data.get('reps')),
                             notes=set_data.get('notes', '')
                         )
                         db.session.add(exercise_set)
@@ -677,6 +677,7 @@ def edit(id):
                     for set_data in exercise_data['sets']:
                         set_ = ExerciseSet(
                             exercise_id=exercise.id,
+                            user_id=current_user.id,  # Add the user_id
                             set_number=set_data['set_number'],
                             weight=safe_float(set_data.get('weight')),
                             reps=safe_int(set_data.get('reps')),
