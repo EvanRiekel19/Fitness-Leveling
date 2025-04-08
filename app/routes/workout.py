@@ -752,6 +752,9 @@ def delete(id):
     workout = Workout.query.filter_by(id=id, user_id=current_user.id).first_or_404()
     
     try:
+        # Store the XP that needs to be subtracted
+        xp_to_subtract = workout.xp_earned or 0
+        
         # Delete associated exercise sets first
         for exercise in workout.exercises:
             for set_ in exercise.sets:
@@ -759,11 +762,18 @@ def delete(id):
             # Then delete the exercises
             db.session.delete(exercise)
         
-        # Finally delete the workout
+        # Delete the workout
         db.session.delete(workout)
+        
+        # Subtract XP from user
+        if xp_to_subtract > 0:
+            current_user.xp = max(0, current_user.xp - xp_to_subtract)  # Ensure XP doesn't go below 0
+            flash(f'Workout deleted and {xp_to_subtract} XP subtracted', 'success')
+        else:
+            flash('Workout deleted successfully', 'success')
+            
         db.session.commit()
         
-        flash('Workout deleted successfully', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting workout: {str(e)}', 'error')
