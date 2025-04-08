@@ -6,6 +6,7 @@ class ExerciseSet(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     set_number = db.Column(db.Integer, nullable=False)
     reps = db.Column(db.Integer)
     weight = db.Column(db.Float)
