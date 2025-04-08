@@ -39,8 +39,10 @@ def create_app(test_config=None):
     # Import models for migrations
     from app.models.user import User
     from app.models.workout import Workout
-    from app.models.exercise import Exercise, ExerciseSet
+    from app.models.exercise import Exercise
+    from app.models.exercise_set import ExerciseSet
     from app.models.challenge import Challenge, ChallengeParticipant
+    from app.models.friendship import Friendship
     
     # Set up user loader
     @login_manager.user_loader

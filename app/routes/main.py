@@ -5,6 +5,10 @@ from datetime import datetime, timedelta
 from app import db
 from sqlalchemy import inspect
 from flask import current_app
+from app.models.exercise import Exercise
+from app.models.exercise_set import ExerciseSet
+import json
+from sqlalchemy import text
 
 bp = Blueprint('main', __name__)
 
@@ -320,3 +324,55 @@ def debug_workout_exercises(workout_id):
     }
     
     return jsonify(response) 
+
+@bp.route('/workout_history')
+@login_required
+def workout_history():
+    # Get all workouts for the user
+    workouts = Workout.query.filter_by(user_id=current_user.id)\
+        .order_by(Workout.date.desc())\
+        .all()
+    
+    return render_template('workout_history.html', workouts=workouts)
+
+@bp.route('/exercise_history/<exercise_name>')
+@login_required
+def exercise_history(exercise_name):
+    try:
+        # Get all exercises with this name for the user
+        exercises = db.session.execute(text("""
+            SELECT e.id, e.workout_id, e.name, w.date
+            FROM exercise e
+            JOIN workout w ON e.workout_id = w.id
+            WHERE e.name = :exercise_name
+            AND w.user_id = :user_id
+            ORDER BY w.date DESC
+            LIMIT 5
+        """), {'exercise_name': exercise_name, 'user_id': current_user.id}).fetchall()
+        
+        if not exercises:
+            return jsonify({'error': 'No history found for this exercise'}), 404
+        
+        history = []
+        for ex in exercises:
+            sets = db.session.execute(text("""
+                SELECT set_number, reps, weight, notes
+                FROM exercise_set
+                WHERE exercise_id = :exercise_id
+                ORDER BY set_number
+            """), {'exercise_id': ex[0]}).fetchall()
+            
+            history.append({
+                'date': ex[3].strftime('%Y-%m-%d'),
+                'sets': [{
+                    'set_number': s[0],
+                    'reps': s[1],
+                    'weight': s[2],
+                    'notes': s[3]
+                } for s in sets]
+            })
+        
+        return jsonify(history)
+    except Exception as e:
+        print(f"Error getting exercise history: {e}")
+        return jsonify({'error': 'Failed to get exercise history'}), 500 
