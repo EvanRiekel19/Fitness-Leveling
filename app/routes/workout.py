@@ -745,3 +745,27 @@ def edit(id):
                          initial_exercises=exercises_json,
                          exercise_history=exercise_history,
                          workout_history=workout_history)
+
+@bp.route('/workouts/<int:id>/delete', methods=['POST'])
+@login_required
+def delete(id):
+    workout = Workout.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    
+    try:
+        # Delete associated exercise sets first
+        for exercise in workout.exercises:
+            for set_ in exercise.sets:
+                db.session.delete(set_)
+            # Then delete the exercises
+            db.session.delete(exercise)
+        
+        # Finally delete the workout
+        db.session.delete(workout)
+        db.session.commit()
+        
+        flash('Workout deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting workout: {str(e)}', 'error')
+    
+    return redirect(url_for('workout.index'))
