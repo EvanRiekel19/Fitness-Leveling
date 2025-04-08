@@ -18,7 +18,7 @@ class Workout(db.Model):
     strava_id = db.Column(db.String(50), unique=True)  # Added to prevent duplicates
     
     # Add relationship to exercises
-    exercises = db.relationship('Exercise', backref='workout', lazy='dynamic', cascade="all, delete-orphan")
+    exercises = db.relationship('Exercise', back_populates='workout', lazy='dynamic', cascade="all, delete-orphan")
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
