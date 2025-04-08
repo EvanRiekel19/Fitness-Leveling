@@ -343,7 +343,8 @@ def new_strength():
                     # Create exercise
                     exercise = Exercise(
                         workout_id=workout.id,
-                        name=exercise_name
+                        name=exercise_name,
+                        user_id=current_user.id  # Add the user_id
                     )
                     db.session.add(exercise)
                     db.session.flush()
