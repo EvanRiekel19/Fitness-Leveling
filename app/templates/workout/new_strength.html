@@ -257,37 +257,58 @@
     const exerciseTemplate = document.getElementById('exercise-template');
     const setRowTemplate = document.getElementById('set-row-template');
     
+    // Function to initialize existing exercises
+    function initializeExistingExercises() {
+        if (serverData.initialExercises && serverData.initialExercises.length > 0) {
+            console.log('Initializing form with existing exercises:', serverData.initialExercises);
+            noExercisesMessage.style.display = 'none';
+            
+            // Add each exercise from the initial data
+            serverData.initialExercises.forEach(exerciseData => {
+                const exerciseCard = addExercise();
+                const exerciseNameInput = exerciseCard.querySelector('.exercise-name');
+                exerciseNameInput.value = exerciseData.name;
+                
+                // Add sets for this exercise
+                exerciseData.sets.forEach(setData => {
+                    const setRow = addSetToExercise(exerciseCard);
+                    if (setRow) {
+                        const weightInput = setRow.querySelector('.set-weight');
+                        const repsInput = setRow.querySelector('.set-reps');
+                        const notesInput = setRow.querySelector('.set-notes');
+                        
+                        if (weightInput) weightInput.value = setData.weight || '';
+                        if (repsInput) repsInput.value = setData.reps || '';
+                        if (notesInput) notesInput.value = setData.notes || '';
+                    }
+                });
+                
+                // Update exercise history
+                updateExerciseHistory(exerciseCard, exerciseData.name);
+            });
+            
+            // Update the exercises data
+            updateExercisesData();
+        }
+    }
+    
     // Initialize form
-    document.addEventListener('DOMContentLoaded', () => {
-        // Set up event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add event listeners
         workoutForm.addEventListener('submit', prepareFormSubmission);
+        addExerciseBtn.addEventListener('click', addExercise);
+        subtypeSelect.addEventListener('change', updatePreviousWorkout);
         nameInput.addEventListener('input', updateSubmitButtonState);
         durationInput.addEventListener('input', updateSubmitButtonState);
-        subtypeSelect.addEventListener('change', updatePreviousWorkout);
-        addExerciseBtn.addEventListener('click', addExercise);
         
-        // Initialize exercise data if editing
-        if (serverData.initialExercises && serverData.initialExercises.length > 0) {
-            try {
-                serverData.initialExercises.forEach(exercise => {
-                    const exerciseCard = createExerciseCard();
-                    const nameInput = exerciseCard.querySelector('.exercise-name');
-                    nameInput.value = exercise.name;
-                    
-                    exercise.sets.forEach(set => {
-                        addSet(exerciseCard, set);
-                    });
-                    
-                    updateExerciseHistory(nameInput);
-                });
-            } catch (e) {
-                console.error('Error initializing exercises:', e);
-            }
-        }
+        // Initialize form with existing data if editing
+        initializeExistingExercises();
         
-        // Initialize UI state
-        updateSubmitButtonState();
+        // Show previous workout info
         updatePreviousWorkout();
+        
+        // Enable submit button if form is valid
+        updateSubmitButtonState();
     });
     
     // Function to format date
