@@ -356,7 +356,9 @@ def new_strength():
                     # Create the exercise
                     exercise = Exercise(
                         workout_id=workout.id,
-                        name=exercise_name
+                        name=exercise_name,
+                        type='strength',
+                        user_id=current_user.id  # Add the user_id
                     )
                     db.session.add(exercise)
                     db.session.flush()
@@ -365,7 +367,7 @@ def new_strength():
                     # Add sets for this exercise
                     sets_data = exercise_data.get('sets', [])
                     print(f"DEBUG STRENGTH: Processing {len(sets_data)} sets for exercise '{exercise_name}'")
-                    
+
                     for set_data in sets_data:
                         exercise_set = ExerciseSet(
                             exercise_id=exercise.id,
@@ -377,9 +379,13 @@ def new_strength():
                         )
                         db.session.add(exercise_set)
                         print(f"DEBUG STRENGTH: Added set {exercise_set.set_number} with {safe_int(set_data.get('reps'))} reps at {safe_float(set_data.get('weight'))} kg")
+
                 except Exception as e:
                     print(f"DEBUG STRENGTH: Error adding exercise {i+1}: {e}")
-            
+                    db.session.rollback()
+                    flash('Error adding exercise. Please try again.', 'error')
+                    return redirect(url_for('workout.new_strength'))
+
             # Calculate XP and update user
             try:
                 xp_earned = workout.calculate_xp()
@@ -391,8 +397,14 @@ def new_strength():
                 print(f"DEBUG STRENGTH: XP calculation/assignment error: {e}")
                 xp_earned = 50  # Fallback
             
-            db.session.commit()
-            print(f"DEBUG STRENGTH: Successfully committed workout with {len(exercises_data)} exercises")
+            try:
+                db.session.commit()
+                print(f"DEBUG STRENGTH: Successfully committed workout with {len(exercises_data)} exercises")
+            except Exception as e:
+                db.session.rollback()
+                print(f"DEBUG STRENGTH: Commit error: {e}")
+                flash('Error saving workout. Please try again.', 'error')
+                return redirect(url_for('workout.new_strength'))
             
             flash(f'Strength workout logged! Earned {xp_earned} XP', 'success')
             return redirect(url_for('workout.index'))
