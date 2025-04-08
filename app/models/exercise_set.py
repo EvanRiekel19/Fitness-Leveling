@@ -12,7 +12,8 @@ class ExerciseSet(db.Model):
     weight = db.Column(db.Float)
     notes = db.Column(db.String(500))
 
-    exercise = db.relationship('app.models.exercise.Exercise', back_populates='sets')
+    # Relationships
+    exercise = db.relationship('Exercise', back_populates='sets')
 
     def __repr__(self):
         return f'<ExerciseSet {self.set_number} for Exercise {self.exercise_id}>' 
