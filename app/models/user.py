@@ -36,7 +36,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     workouts = db.relationship('Workout', backref='user', lazy='dynamic')
-    exercise_sets = db.relationship('ExerciseSet', backref='user', lazy=True)
+    exercise_sets = db.relationship('app.models.exercise_set.ExerciseSet', backref='user', lazy=True)
     
     # Friend relationships
     sent_friend_requests = db.relationship(

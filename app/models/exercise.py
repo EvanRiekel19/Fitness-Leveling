@@ -1,4 +1,5 @@
 from app import db
+from app.models.exercise_set import ExerciseSet
 
 class Exercise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
